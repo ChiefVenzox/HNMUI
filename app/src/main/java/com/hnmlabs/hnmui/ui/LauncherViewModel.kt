@@ -69,6 +69,9 @@ data class LauncherOverlayState(
     val openFolderModal: ActiveFolderModal? = null,
     val quickMenu: ActiveQuickMenu? = null,
     val smallestScreenWidthDp: Int = 392,
+    val isLandscape: Boolean = false,
+    val screenWidthDp: Int = 392,
+    val screenHeightDp: Int = 800,
     val targetRefreshRateHz: Int = 120,
     val isDefaultLauncher: Boolean = false,
     val isNotificationAccessEnabled: Boolean = false
@@ -118,6 +121,14 @@ private data class ResolvedWorkspaceSlice(
     val totalUnreadBadges: Int
 )
 
+@Immutable
+private data class ScreenConfiguration(
+    val smallestScreenWidthDp: Int,
+    val isLandscape: Boolean,
+    val screenWidthDp: Int,
+    val screenHeightDp: Int
+)
+
 /**
  * HNMUI tek yönlü durum yönetimi (UDF) ViewModel sınıfı.
  * Yüklü uygulamaları, canlı bildirim rozetlerini, 7x7'ye kadar özelleştirilebilir DataStore
@@ -144,8 +155,15 @@ class LauncherViewModel(
     private val defaultCustomization = LauncherCustomizationSettings()
     private val defaultGridSpec = FormFactorPolicy.resolve(392, featureFlags, defaultCustomization)
 
-    private val smallestScreenWidthDpFlow = overlayState
-        .map { it.smallestScreenWidthDp }
+    private val screenConfigFlow = overlayState
+        .map {
+            ScreenConfiguration(
+                smallestScreenWidthDp = it.smallestScreenWidthDp,
+                isLandscape = it.isLandscape,
+                screenWidthDp = it.screenWidthDp,
+                screenHeightDp = it.screenHeightDp
+            )
+        }
         .distinctUntilChanged()
 
     init {
@@ -153,19 +171,22 @@ class LauncherViewModel(
             combine(
                 appsRepository.apps,
                 layoutRepository.persistedState,
-                smallestScreenWidthDpFlow
-            ) { apps, persisted, swDp ->
-                Triple(apps, persisted, swDp)
+                screenConfigFlow
+            ) { apps, persisted, screenConfig ->
+                Triple(apps, persisted, screenConfig)
             }
                 .distinctUntilChanged()
-                .collect { (apps, persisted, swDp) ->
+                .collect { (apps, persisted, screenConfig) ->
                     if (apps.isNotEmpty()) {
                         syncMutex.withLock {
                             val activeCustom = persisted?.customization ?: defaultCustomization
                             val spec = FormFactorPolicy.resolve(
-                                smallestScreenWidthDp = swDp,
+                                smallestScreenWidthDp = screenConfig.smallestScreenWidthDp,
                                 flags = featureFlags,
-                                customization = activeCustom
+                                customization = activeCustom,
+                                isLandscape = screenConfig.isLandscape,
+                                screenWidthDp = screenConfig.screenWidthDp,
+                                screenHeightDp = screenConfig.screenHeightDp
                             )
                             layoutRepository.syncWithInstalledApps(
                                 installedApps = apps,
@@ -182,13 +203,16 @@ class LauncherViewModel(
         appsRepository.apps,
         HnmNotificationListenerService.badgeCounts,
         layoutRepository.persistedState,
-        smallestScreenWidthDpFlow
-    ) { rawApps, badges, persisted, swDp ->
+        screenConfigFlow
+    ) { rawApps, badges, persisted, screenConfig ->
         val activeCustomization = persisted?.customization ?: defaultCustomization
         val gridSpec = FormFactorPolicy.resolve(
-            smallestScreenWidthDp = swDp,
+            smallestScreenWidthDp = screenConfig.smallestScreenWidthDp,
             flags = featureFlags,
-            customization = activeCustomization
+            customization = activeCustomization,
+            isLandscape = screenConfig.isLandscape,
+            screenWidthDp = screenConfig.screenWidthDp,
+            screenHeightDp = screenConfig.screenHeightDp
         )
 
         val badgedApps = if (badges.isEmpty()) {
@@ -396,18 +420,44 @@ class LauncherViewModel(
         }
     }
 
+    val accentThemeFlow: Flow<com.hnmlabs.hnmui.model.HnmAccentTheme> = uiState
+        .map { it.customization.accentTheme }
+        .distinctUntilChanged()
+
+    fun setAccentTheme(theme: com.hnmlabs.hnmui.model.HnmAccentTheme) {
+        updateCustomization { current ->
+            if (current.accentTheme == theme) current else current.copy(accentTheme = theme, iconAccentColorRgb = theme.primaryColorArgb)
+        }
+    }
+
+    val allowScreenRotationFlow: Flow<Boolean> = uiState
+        .map { it.customization.allowScreenRotation }
+        .distinctUntilChanged()
+
+    fun setAllowScreenRotation(allow: Boolean) {
+        updateCustomization { current ->
+            if (current.allowScreenRotation == allow) current else current.copy(allowScreenRotation = allow)
+        }
+    }
+
     fun updateDeviceAndPermissionStatus(
         smallestScreenWidthDp: Int,
         targetRefreshRateHz: Int,
         isDefaultLauncher: Boolean,
-        isNotificationAccessEnabled: Boolean
+        isNotificationAccessEnabled: Boolean,
+        isLandscape: Boolean = false,
+        screenWidthDp: Int = smallestScreenWidthDp,
+        screenHeightDp: Int = smallestScreenWidthDp
     ) {
         overlayState.update {
             it.copy(
                 smallestScreenWidthDp = smallestScreenWidthDp,
                 targetRefreshRateHz = targetRefreshRateHz,
                 isDefaultLauncher = isDefaultLauncher,
-                isNotificationAccessEnabled = isNotificationAccessEnabled
+                isNotificationAccessEnabled = isNotificationAccessEnabled,
+                isLandscape = isLandscape,
+                screenWidthDp = screenWidthDp,
+                screenHeightDp = screenHeightDp
             )
         }
     }

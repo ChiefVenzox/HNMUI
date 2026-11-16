@@ -5,15 +5,23 @@
 **iOS Simplicity Meets Android Freedom — Frosted-Glass 120 FPS Home Launcher**  
 **iOS Sadeliği, Android Özgürlüğüyle Buluştu — Buzlu Cam Dokulu 120 FPS Ana Ekran**
 
-[![Latest Release](https://img.shields.io/badge/release-v0.3.4--alpha-0A84FF?style=for-the-badge)](https://github.com/HNMLabs/HNMUI/releases/tag/v0.3.4-alpha)
-[![CI & Secret Audit](https://img.shields.io/github/actions/workflow/status/HNMLabs/HNMUI/android-ci.yml?branch=main&style=for-the-badge&label=CI%20%26%20Security)](https://github.com/HNMLabs/HNMUI/actions/workflows/android-ci.yml)
+[![Latest Release](https://img.shields.io/badge/release-v0.3.5--alpha-0A84FF?style=for-the-badge)](releases/HNMUI-latest.apk)
+[![CI & Secret Audit](https://img.shields.io/github/actions/workflow/status/ChiefVenzox/HNMUI/android-ci.yml?branch=main&style=for-the-badge&label=CI%20%26%20Security)](https://github.com/ChiefVenzox/HNMUI/actions)
 [![Android](https://img.shields.io/badge/Android-9.0%2B%20(API%2028--35)-30D158?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
 [![Offline First](https://img.shields.io/badge/Privacy-Zero%20Internet-10B981?style=for-the-badge)](SECURITY.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](LICENSE)
 
-[**🇬🇧 English**](#english) · [**🇹🇷 Türkçe**](#türkçe) · [**📄 `README.tr.md`**](README.tr.md) · [**📚 Wiki**](docs/wiki/Home.md) · [**🔒 Security**](SECURITY.md) · [**📋 Changelog**](CHANGELOG.md) · [**🤝 Contributing**](CONTRIBUTING.md) · [**⬇️ APK (`v0.3.4-alpha`)**](https://github.com/HNMLabs/HNMUI/raw/main/releases/HNMUI-v0.3.4-alpha.apk)
+[**🇬🇧 English**](#english) · [**🇹🇷 Türkçe**](#türkçe) · [**📄 `README.tr.md`**](README.tr.md) · [**📚 Wiki**](docs/wiki/Home.md) · [**🔒 Security**](SECURITY.md) · [**📋 Changelog**](CHANGELOG.md) · [**🤝 Contributing**](CONTRIBUTING.md) · [**⬇️ Doğrudan APK İndir (`v0.3.5`)**](releases/HNMUI-latest.apk)
 
 </div>
+
+---
+
+> [!TIP]
+> ### 📦 Doğrudan APK İndir / Direct APK Download
+> - **🚀 En Güncel Sürüm (Tablet, Yatay Mod & Cam Temaları):** [**`releases/HNMUI-latest.apk`**](releases/HNMUI-latest.apk) *(3.0 MB, Play Protect Uyumlu)*
+> - **🌐 GitHub Raw Doğrudan İndirme:** [**HNMUI-latest.apk İndir**](https://github.com/ChiefVenzox/HNMUI/raw/main/releases/HNMUI-latest.apk) veya [**HNMUI-v0.3.5-tablet.apk**](https://github.com/ChiefVenzox/HNMUI/raw/main/releases/HNMUI-v0.3.5-tablet.apk)
+> - **📁 Depo İçi Konum:** [`releases/HNMUI-latest.apk`](releases/HNMUI-latest.apk)
 
 ---
 
@@ -25,6 +33,7 @@
 
 ### ✨ Key Features
 
+- **Tablet & Horizontal Landscape Adaptation:** Fluid auto-rotation across portrait and landscape, responsive 6x4 landscape grid, iPadOS-style centered floating glass Dock, 2-column Today View dashboard, and responsive 3-4 category columns in App Library.
 - **System-Adaptive Light & Dark Glass Engine (`SYSTEM` / `LIGHT` / `DARK`):** Automatically tracks Android's Dark & Light mode live without restarting, or lets you switch manually from Control Center and HNM Settings with smooth `380ms` transitions between **Midnight Dark Glass** and **Daylight Pearlescent Glass**.
 - **120 FPS High Refresh Rate & Calm Minimalist Motion:** Locks onto the highest native display refresh rate (`90Hz` / `120Hz` / `144Hz`) via `HighRefreshRateHelper`, applies critically-damped iOS spring physics, pure GPU draw-phase animations, organic staggered Edit Mode jiggle, and background depth recession (`94.5%`) when overlays open.
 - **iOS Status Bar + Zero-Miss Dual Top Pull-Down Shades (Zero One UI Interruption):** Hides OEM status bars on the Home Screen in favor of `HnmIosStatusBar` with cutout-aware `86dp+` pull zones and diagonal thumb-arc recognition:
@@ -34,12 +43,12 @@
 - **Built-in iOS-Style HNM Settings:** Complete frosted-glass **HNM Settings** suite (*Battery & Health*, *Display & Brightness*, *Sounds & Haptics*, *Storage*, *Wi-Fi & Connectivity*, *Apps*, *General & RAM*), automatically intercepting the stock Settings icon.
 - **Minimalist Customization Studio (`4×4` up to `7×7`):** Customize Home Screen grids up to **`7×7`**, expanded Folder grids from `3×3` up to **`7×7`**, folder cover mini-previews (`2×2` / `3×3`), Appearance Mode (`System` / `Light` / `Dark`), icon size, label visibility, glass opacity, and **Dock size (`75%–125%`) & icon capacity (`3–7` icons)**.
 - **Zero-Copy Live System Wallpaper & 3-Plane Navigation:** Today View (`Page 0` with Quick Notes & Android `AppWidgetHost`), Paged Home Screen (`4×4`–`7×7`), and automatic **App Library (`Page N+1`)**.
-- **Phone-First, Tablet-Reserved Architecture:** Optimized for portrait phone ergonomics out of the box, while keeping a `6×5` tablet layout profile ready in reserve behind `LauncherFeatureFlags(enableTabletLayout = false)`.
 
 ### 📦 Download & Installation
 
 Grab the Play Protect-compliant, release-signed APK directly:
-- **[Download HNMUI v0.3.4-alpha APK](https://github.com/HNMLabs/HNMUI/raw/main/releases/HNMUI-v0.3.4-alpha.apk)**
+- **[Direct Repository Download: `releases/HNMUI-latest.apk`](releases/HNMUI-latest.apk)**
+- **[GitHub Raw Link: Download HNMUI Latest APK](https://github.com/ChiefVenzox/HNMUI/raw/main/releases/HNMUI-latest.apk)**
 - After installing, tap **"Set as Default" / "Ayarla"** at the top of the Home Screen and select **HNMUI** as your Default Home App.
 
 ### 🏗️ Architecture & Build Variants
@@ -102,8 +111,10 @@ Requires **JDK 17+** and **Android SDK 35**.
 
 ### 📦 İndirme ve Kurulum
 
-Play Protect uyumlu, özel sürüm anahtarıyla imzalanmış APK dosyasını doğrudan indirebilirsiniz:
-- **[HNMUI v0.3.4-alpha APK İndir](https://github.com/HNMLabs/HNMUI/raw/main/releases/HNMUI-v0.3.4-alpha.apk)**
+Play Protect uyumlu, optimize edilmiş ve imzalanmış en güncel APK dosyasını doğrudan indirebilirsiniz:
+- **[Doğrudan Depodan İndir: `releases/HNMUI-latest.apk`](releases/HNMUI-latest.apk)**
+- **[GitHub Raw Bağlantısı: HNMUI En Güncel APK İndir](https://github.com/ChiefVenzox/HNMUI/raw/main/releases/HNMUI-latest.apk)**
+- **[Tablet & Yatay Mod Özel Sürüm APK: `HNMUI-v0.3.5-tablet.apk`](https://github.com/ChiefVenzox/HNMUI/raw/main/releases/HNMUI-v0.3.5-tablet.apk)**
 - Kurulumdan sonra ana ekranın üstündeki **"Ayarla"** çubuğuna dokunup varsayılan ana ekran uygulaması olarak **HNMUI**'yi seçmeniz yeterlidir.
 
 ### 🛠️ Kaynak Koddan Derleme

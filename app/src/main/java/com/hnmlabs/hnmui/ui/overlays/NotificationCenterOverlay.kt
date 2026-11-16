@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -247,6 +248,8 @@ fun NotificationCenterOverlay(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .widthIn(max = 580.dp)
+                    .align(Alignment.TopCenter)
                     .hnmSafeTopPadding()
                     .navigationBarsPadding()
                     .padding(horizontal = 20.dp),

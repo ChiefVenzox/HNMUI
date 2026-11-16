@@ -29,11 +29,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.AirplanemodeActive
 import androidx.compose.material.icons.rounded.Bluetooth
@@ -60,6 +62,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -132,6 +135,7 @@ fun ControlCenterOverlay(
     }
     var brightness by remember { mutableFloatStateOf(0.6f) }
     var volume by remember { mutableFloatStateOf(0.5f) }
+    var ringerMode by remember { mutableIntStateOf(AudioManager.RINGER_MODE_NORMAL) }
     var isRotationLocked by remember { mutableStateOf(false) }
     val isTorchOn by DeviceSystemController.isTorchEnabled.collectAsStateWithLifecycle()
 
@@ -164,6 +168,7 @@ fun ControlCenterOverlay(
         }
         isRotationLocked = disp.isRotationLocked
         volume = aud.mediaFraction
+        ringerMode = aud.ringerMode
     }
 
     LaunchedEffect(visible) {
@@ -248,6 +253,8 @@ fun ControlCenterOverlay(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .widthIn(max = 460.dp)
+                    .align(Alignment.TopEnd)
                     .verticalScroll(rememberScrollState())
                     .hnmSafeTopPadding()
                     .navigationBarsPadding()
@@ -505,13 +512,32 @@ fun ControlCenterOverlay(
                                 .weight(1f),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            val isRingerSilentOrVibrate = ringerMode != AudioManager.RINGER_MODE_NORMAL
                             QuickToggleTile(
-                                icon = Icons.Rounded.Calculate,
-                                label = "Hesapla",
-                                active = false,
+                                icon = if (isRingerSilentOrVibrate) {
+                                    Icons.AutoMirrored.Rounded.VolumeOff
+                                } else {
+                                    Icons.AutoMirrored.Rounded.VolumeUp
+                                },
+                                label = when (ringerMode) {
+                                    AudioManager.RINGER_MODE_SILENT -> "Sessiz"
+                                    AudioManager.RINGER_MODE_VIBRATE -> "Titreşim"
+                                    else -> "Sesli"
+                                },
+                                active = isRingerSilentOrVibrate,
                                 modifier = Modifier.weight(1f),
                                 onClick = {
-                                    if (calculatorApp != null) onLaunchApp(calculatorApp) else onOpenHnmSettings()
+                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    coroutineScope.launch {
+                                        val nextMode = withContext(Dispatchers.IO) {
+                                            DeviceSystemController.toggleRingerMode(context)
+                                        }
+                                        ringerMode = nextMode
+                                        val updatedAud = withContext(Dispatchers.IO) {
+                                            DeviceSystemController.readAudioSnapshot(context)
+                                        }
+                                        volume = updatedAud.mediaFraction
+                                    }
                                 }
                             )
                             QuickToggleTile(
@@ -544,9 +570,14 @@ fun ControlCenterOverlay(
                                 .fillMaxHeight()
                         )
 
+                        val isAudioMuted = ringerMode != AudioManager.RINGER_MODE_NORMAL || volume <= 0.02f
                         VerticalGlassSlider(
                             fraction = volume,
-                            icon = Icons.AutoMirrored.Rounded.VolumeUp,
+                            icon = if (isAudioMuted) {
+                                Icons.AutoMirrored.Rounded.VolumeOff
+                            } else {
+                                Icons.AutoMirrored.Rounded.VolumeUp
+                            },
                             onFractionChange = { next ->
                                 volume = next
                                 DeviceSystemController.setStreamVolumeFraction(
@@ -554,6 +585,25 @@ fun ControlCenterOverlay(
                                     AudioManager.STREAM_MUSIC,
                                     next
                                 )
+                                if (next > 0.06f && ringerMode != AudioManager.RINGER_MODE_NORMAL) {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        DeviceSystemController.setRingerMode(context, AudioManager.RINGER_MODE_NORMAL)
+                                        ringerMode = AudioManager.RINGER_MODE_NORMAL
+                                    }
+                                }
+                            },
+                            onIconClick = {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                coroutineScope.launch {
+                                    val nextMode = withContext(Dispatchers.IO) {
+                                        DeviceSystemController.toggleRingerMode(context)
+                                    }
+                                    ringerMode = nextMode
+                                    val updatedAud = withContext(Dispatchers.IO) {
+                                        DeviceSystemController.readAudioSnapshot(context)
+                                    }
+                                    volume = updatedAud.mediaFraction
+                                }
                             },
                             modifier = Modifier
                                 .weight(1f)
@@ -716,6 +766,7 @@ private fun VerticalGlassSlider(
     fraction: Float,
     icon: ImageVector,
     onFractionChange: (Float) -> Unit,
+    onIconClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val colors = HnmTheme.colors
@@ -755,15 +806,29 @@ private fun VerticalGlassSlider(
                     .align(Alignment.BottomCenter)
                     .background(colors.verticalSliderFill)
             )
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (clamped > 0.24f) colors.verticalSliderIconActive else colors.verticalSliderIconIdle,
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
-                    .size(24.dp)
-            )
+                    .padding(bottom = 12.dp)
+                    .size(36.dp)
+                    .then(
+                        if (onIconClick != null) {
+                            Modifier
+                                .clip(CircleShape)
+                                .clickable(onClick = onIconClick)
+                        } else {
+                            Modifier
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (clamped > 0.24f) colors.verticalSliderIconActive else colors.verticalSliderIconIdle,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }

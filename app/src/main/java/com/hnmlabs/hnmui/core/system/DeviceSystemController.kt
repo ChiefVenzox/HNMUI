@@ -473,16 +473,67 @@ object DeviceSystemController {
         }
     }
 
-    fun setRingerMode(context: Context, mode: Int) {
-        val am = context.getSystemService(AudioManager::class.java) ?: return
-        runCatching {
+    fun setRingerMode(context: Context, mode: Int): Boolean {
+        val am = context.getSystemService(AudioManager::class.java) ?: return false
+        val nm = context.getSystemService(android.app.NotificationManager::class.java)
+        val hasDndAccess = nm?.isNotificationPolicyAccessGranted == true
+
+        var directSuccess = false
+        try {
             am.ringerMode = mode
-        }.onFailure {
-            // DND izni yoksa sessiz yerine titreşime düş
-            if (mode == AudioManager.RINGER_MODE_SILENT) {
-                runCatching { am.ringerMode = AudioManager.RINGER_MODE_VIBRATE }
+            directSuccess = true
+        } catch (_: SecurityException) {
+            // Android 7+ DND izin koruması
+        } catch (_: Exception) {}
+
+        if (directSuccess) return true
+
+        // İzin kısıtlaması varsa ses akışları üzerinden güvenli ve sessiz geçiş yap (DND izni gerektirmez)
+        val streamSuccess = runCatching {
+            when (mode) {
+                AudioManager.RINGER_MODE_SILENT,
+                AudioManager.RINGER_MODE_VIBRATE -> {
+                    am.setStreamVolume(AudioManager.STREAM_RING, 0, 0)
+                    am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, 0, 0)
+                    if (mode == AudioManager.RINGER_MODE_VIBRATE) {
+                        runCatching { am.ringerMode = AudioManager.RINGER_MODE_VIBRATE }
+                    }
+                }
+                AudioManager.RINGER_MODE_NORMAL -> {
+                    val maxRing = am.getStreamMaxVolume(AudioManager.STREAM_RING).coerceAtLeast(1)
+                    val targetRing = (maxRing * 0.6f).roundToInt().coerceAtLeast(1)
+                    am.setStreamVolume(AudioManager.STREAM_RING, targetRing, 0)
+                    val maxNotif = am.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION).coerceAtLeast(1)
+                    am.setStreamVolume(AudioManager.STREAM_NOTIFICATION, (maxNotif * 0.6f).roundToInt().coerceAtLeast(1), 0)
+                    runCatching { am.ringerMode = AudioManager.RINGER_MODE_NORMAL }
+                }
+            }
+            true
+        }.getOrDefault(false)
+
+        // Tam sessiz mod istenip DND erişimi eksikse kullanıcıyı doğrudan ayara yönlendir
+        if (mode == AudioManager.RINGER_MODE_SILENT && !hasDndAccess) {
+            runCatching {
+                context.startActivity(
+                    Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
             }
         }
+
+        return streamSuccess
+    }
+
+    fun toggleRingerMode(context: Context): Int {
+        val am = context.getSystemService(AudioManager::class.java) ?: return AudioManager.RINGER_MODE_NORMAL
+        val current = runCatching { am.ringerMode }.getOrDefault(AudioManager.RINGER_MODE_NORMAL)
+        val target = if (current == AudioManager.RINGER_MODE_NORMAL) {
+            AudioManager.RINGER_MODE_VIBRATE
+        } else {
+            AudioManager.RINGER_MODE_NORMAL
+        }
+        setRingerMode(context, target)
+        return runCatching { am.ringerMode }.getOrDefault(target)
     }
 
     fun dispatchMediaKey(context: Context, keyCode: Int) {

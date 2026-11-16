@@ -27,6 +27,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -48,16 +49,26 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableIntStateOf
 import com.hnmlabs.hnmui.core.system.DefaultLauncherHelper
 import com.hnmlabs.hnmui.core.system.DeviceSystemController
 import com.hnmlabs.hnmui.data.InstalledAppsRepository
 import com.hnmlabs.hnmui.model.AppItem
 import com.hnmlabs.hnmui.model.ResolvedHomeItem
 import com.hnmlabs.hnmui.model.ResolvedHomePage
+import com.hnmlabs.hnmui.ui.components.DynamicGlassIsland
 import com.hnmlabs.hnmui.ui.components.HnmIosStatusBar
 import com.hnmlabs.hnmui.ui.components.LocalEditJigglePhase
 import com.hnmlabs.hnmui.ui.components.LocalGlassOpacityFactor
 import com.hnmlabs.hnmui.ui.components.LocalHnmTopBarHeight
+import com.hnmlabs.hnmui.ui.components.LocalIconAccentColor
+import com.hnmlabs.hnmui.ui.components.LocalIconTintStyle
 import com.hnmlabs.hnmui.ui.drag.DraggingGhostOverlay
 import com.hnmlabs.hnmui.ui.drag.HoverDropTarget
 import com.hnmlabs.hnmui.ui.drag.rememberLauncherDragDropController
@@ -281,6 +292,42 @@ fun LauncherScreen(
     var rootWidthPx by remember { mutableFloatStateOf(1080f) }
     var rootHeightPx by remember { mutableFloatStateOf(2340f) }
 
+    var liveBatteryPercent by remember { mutableIntStateOf(100) }
+    var liveIsCharging by remember { mutableStateOf(false) }
+
+    DisposableEffect(context) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                if (intent?.action == Intent.ACTION_BATTERY_CHANGED) {
+                    val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                    val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
+                    if (level >= 0) {
+                        liveBatteryPercent = ((level * 100f) / scale).toInt().coerceIn(0, 100)
+                    }
+                    val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+                    liveIsCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                        status == BatteryManager.BATTERY_STATUS_FULL
+                }
+            }
+        }
+        val sticky = runCatching {
+            context.registerReceiver(receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        }.getOrNull()
+        if (sticky != null) {
+            val level = sticky.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = sticky.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
+            if (level >= 0) {
+                liveBatteryPercent = ((level * 100f) / scale).toInt().coerceIn(0, 100)
+            }
+            val status = sticky.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+            liveIsCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                status == BatteryManager.BATTERY_STATUS_FULL
+        }
+        onDispose {
+            runCatching { context.unregisterReceiver(receiver) }
+        }
+    }
+
     // İkon sürüklenirken ekranın sol/sağ kenarında bekletildiğinde yan ana ekran sayfasına yumuşak geçiş
     val edgeZonePx = remember(density) { with(density) { 36.dp.toPx() } }
     val dragEdgeDirection by remember {
@@ -403,7 +450,9 @@ fun LauncherScreen(
         LocalHapticFeedback provides haptics,
         LocalGlassOpacityFactor provides state.gridSpec.glassOpacityFactor,
         LocalHnmTopBarHeight provides if (state.customization.useIosStatusBar) 42.dp else 0.dp,
-        LocalEditJigglePhase provides sharedJigglePhaseState
+        LocalEditJigglePhase provides sharedJigglePhaseState,
+        LocalIconTintStyle provides state.customization.iconTintStyle,
+        LocalIconAccentColor provides state.customization.iconAccentColorRgb
     ) {
         Box(
             modifier = Modifier
@@ -519,6 +568,7 @@ fun LauncherScreen(
                                 scaleX = pageScale
                                 scaleY = pageScale
                                 alpha = lerp(0.84f, 1f, 1f - clampedOffset)
+                                translationX = rawOffset * (size.width * 0.08f)
                             }
                     ) {
                         when (pageIndex) {
@@ -544,7 +594,8 @@ fun LauncherScreen(
                                     onToggleQuickNote = viewModel::toggleQuickNote,
                                     onDeleteQuickNote = viewModel::deleteQuickNote,
                                     onPickWidget = onRequestPickWidget,
-                                    onRemoveWidget = onRemoveHostedWidget
+                                    onRemoveWidget = onRemoveHostedWidget,
+                                    todayDualColumn = state.gridSpec.todayDualColumn
                                 )
                             }
 
@@ -636,6 +687,23 @@ fun LauncherScreen(
                     onTapRightControlCenter = viewModel::openControlCenter,
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
+
+                // HNMUI Akıllı Cam Kapsül (Dynamic Glass Island)
+                if (state.customization.dynamicIslandEnabled && !state.isHnmSettingsOpen) {
+                    DynamicGlassIsland(
+                        batteryPercent = liveBatteryPercent,
+                        isCharging = liveIsCharging,
+                        themeMode = state.customization.themeMode,
+                        onOpenControlCenter = viewModel::openControlCenter,
+                        onOpenNotificationCenter = viewModel::openNotificationCenter,
+                        onToggleThemeMode = {
+                            viewModel.updateCustomization {
+                                it.copy(themeMode = it.themeMode.nextMode())
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.TopCenter)
+                    )
+                }
             }
 
             // Parmak altında 120 FPS süzülen sürükleme hayalet ikonu

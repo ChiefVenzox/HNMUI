@@ -13,7 +13,7 @@ import com.hnmlabs.hnmui.widget.LauncherWidgetHostManager
 class HnmLauncherApp : Application() {
 
     val featureFlags = LauncherFeatureFlags(
-        enableTabletLayout = false // İlk aşamada telefon aktif; tablet mimaride rezerve tutulur
+        enableTabletLayout = true
     )
 
     var hasAutoPromptedDefaultRole: Boolean = false

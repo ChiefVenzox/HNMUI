@@ -3,6 +3,7 @@ package com.hnmlabs.hnmui
 import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -159,8 +160,21 @@ class LauncherActivity : ComponentActivity() {
             val themeMode by viewModel.themeModeFlow.collectAsStateWithLifecycle(
                 initialValue = viewModel.uiState.value.customization.themeMode
             )
+            val accentTheme by viewModel.accentThemeFlow.collectAsStateWithLifecycle(
+                initialValue = viewModel.uiState.value.customization.accentTheme
+            )
             val systemDark = isSystemInDarkTheme()
             val effectiveDark = resolveIsDarkTheme(mode = themeMode, systemDark = systemDark)
+
+            val allowRotation by viewModel.allowScreenRotationFlow.collectAsStateWithLifecycle(
+                initialValue = viewModel.uiState.value.customization.allowScreenRotation
+            )
+            LaunchedEffect(allowRotation) {
+                requestedOrientation = FormFactorPolicy.preferredScreenOrientation(
+                    flags = app.featureFlags,
+                    customization = viewModel.uiState.value.customization.copy(allowScreenRotation = allowRotation)
+                )
+            }
 
             LaunchedEffect(useIosStatusBar, effectiveDark) {
                 applySystemStatusBarPolicy(
@@ -169,7 +183,7 @@ class LauncherActivity : ComponentActivity() {
                 )
             }
 
-            HnmLauncherTheme(themeMode = themeMode) {
+            HnmLauncherTheme(themeMode = themeMode, accentTheme = accentTheme) {
                 LauncherScreen(
                     viewModel = viewModel,
                     widgetHostManager = app.widgetHostManager,
@@ -266,7 +280,11 @@ class LauncherActivity : ComponentActivity() {
 
     private fun syncDeviceAndPermissionStateAsync(onSyncedMain: ((Boolean) -> Unit)? = null) {
         val hz = HighRefreshRateHelper.enableMaxRefreshRate(this)
-        val swDp = resources.configuration.smallestScreenWidthDp
+        val config = resources.configuration
+        val swDp = config.smallestScreenWidthDp
+        val isLandscape = config.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val screenW = config.screenWidthDp
+        val screenH = config.screenHeightDp
         val appCtx = applicationContext
         lifecycleScope.launch(Dispatchers.IO) {
             val isDefault = DefaultLauncherHelper.isDefaultLauncher(appCtx)
@@ -275,7 +293,10 @@ class LauncherActivity : ComponentActivity() {
                 smallestScreenWidthDp = swDp,
                 targetRefreshRateHz = hz,
                 isDefaultLauncher = isDefault,
-                isNotificationAccessEnabled = isNotifEnabled
+                isNotificationAccessEnabled = isNotifEnabled,
+                isLandscape = isLandscape,
+                screenWidthDp = screenW,
+                screenHeightDp = screenH
             )
             if (onSyncedMain != null) {
                 withContext(Dispatchers.Main.immediate) {
@@ -283,5 +304,10 @@ class LauncherActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        syncDeviceAndPermissionStateAsync()
     }
 }

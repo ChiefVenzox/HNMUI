@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -77,19 +79,25 @@ fun AppLibraryPage(
 ) {
     val colors = HnmTheme.colors
     val haptics = LocalHapticFeedback.current
+    val configuration = LocalConfiguration.current
     var filterQuery by remember { mutableStateOf("") }
+
+    val horizontalPadding = if (configuration.screenWidthDp >= 900) 40.dp else if (configuration.screenWidthDp >= 600) 28.dp else 18.dp
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .hnmSafeTopPadding()
-            .padding(horizontal = 18.dp)
+            .padding(horizontal = horizontalPadding)
     ) {
         Spacer(modifier = Modifier.height(14.dp))
 
         // Üst buzlu cam Uygulama Arşivi arama çubuğu
         GlassSurface(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 680.dp)
+                .align(Alignment.CenterHorizontally),
             shape = RoundedCornerShape(20.dp),
             tone = GlassTone.CARD,
             shadowElevation = 6.dp
@@ -149,7 +157,10 @@ fun AppLibraryPage(
             }
 
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 760.dp)
+                    .align(Alignment.CenterHorizontally),
                 contentPadding = PaddingValues(bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -196,13 +207,18 @@ fun AppLibraryPage(
                 }
             }
         } else {
-            // 2 sütunlu otomatik kategori klasörleri
+            // Tablet ve yatay modda 3 veya 4 sütunlu otomatik kategori klasörleri
+            val categoryColumns = when {
+                configuration.screenWidthDp >= 960 -> 4
+                configuration.screenWidthDp >= 600 -> 3
+                else -> 2
+            }
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
+                columns = GridCells.Fixed(categoryColumns),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 96.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
                 items(groups, key = { it.category.name }) { group ->
                     AppLibraryCategoryPod(

@@ -58,6 +58,45 @@ class LauncherCoreTest {
     }
 
     @Test
+    fun `tablet screen in landscape activates 6x4 grid and today dual column`() {
+        val spec = FormFactorPolicy.resolve(
+            smallestScreenWidthDp = 800,
+            flags = LauncherFeatureFlags(enableTabletLayout = true),
+            isLandscape = true,
+            screenWidthDp = 1280,
+            screenHeightDp = 800
+        )
+        assertEquals(DeviceProfile.TABLET_RESERVED, spec.profile)
+        assertTrue(spec.isTabletHardwareDetected)
+        assertEquals(6, spec.columns)
+        assertEquals(4, spec.rows)
+        assertEquals(6, spec.dockMaxItems)
+        assertTrue(spec.todayDualColumn)
+        assertTrue(spec.dockShowRecentsDivider)
+    }
+
+    @Test
+    fun `screen orientation policy unlocks free rotation when allowScreenRotation is true`() {
+        val orientation = FormFactorPolicy.preferredScreenOrientation(
+            flags = LauncherFeatureFlags(enableTabletLayout = true),
+            customization = com.hnmlabs.hnmui.model.LauncherCustomizationSettings(allowScreenRotation = true)
+        )
+        assertEquals(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, orientation)
+
+        val phoneOrientationUnlocked = FormFactorPolicy.preferredScreenOrientation(
+            flags = LauncherFeatureFlags(enableTabletLayout = false),
+            customization = com.hnmlabs.hnmui.model.LauncherCustomizationSettings(allowScreenRotation = true)
+        )
+        assertEquals(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, phoneOrientationUnlocked)
+
+        val phoneOrientationLocked = FormFactorPolicy.preferredScreenOrientation(
+            flags = LauncherFeatureFlags(enableTabletLayout = false),
+            customization = com.hnmlabs.hnmui.model.LauncherCustomizationSettings(allowScreenRotation = false)
+        )
+        assertEquals(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, phoneOrientationLocked)
+    }
+
+    @Test
     fun `custom 7x7 home grid and 7x7 folder grid fit safely within phone screen bounds`() {
         val custom = com.hnmlabs.hnmui.model.LauncherCustomizationSettings(
             gridColumns = 7,
@@ -625,6 +664,62 @@ class LauncherCoreTest {
                 isOnHomePages = true,
                 isEditMode = false
             )
+        )
+    }
+
+    @Test
+    fun `icon tint style cycles through all modes properly`() {
+        var style = com.hnmlabs.hnmui.model.IconTintStyle.ORIGINAL
+        style = style.nextStyle()
+        assertEquals(com.hnmlabs.hnmui.model.IconTintStyle.GLASS_AUTO, style)
+        style = style.nextStyle()
+        assertEquals(com.hnmlabs.hnmui.model.IconTintStyle.GLASS_PEARL, style)
+        style = style.nextStyle()
+        assertEquals(com.hnmlabs.hnmui.model.IconTintStyle.GLASS_MIDNIGHT, style)
+        style = style.nextStyle()
+        assertEquals(com.hnmlabs.hnmui.model.IconTintStyle.GLASS_TINTED, style)
+        style = style.nextStyle()
+        assertEquals(com.hnmlabs.hnmui.model.IconTintStyle.ORIGINAL, style)
+    }
+
+    @Test
+    fun `customization settings default to dynamic island enabled and original icon tint`() {
+        val settings = com.hnmlabs.hnmui.model.LauncherCustomizationSettings()
+        assertTrue(settings.dynamicIslandEnabled)
+        assertEquals(com.hnmlabs.hnmui.model.IconTintStyle.ORIGINAL, settings.iconTintStyle)
+        assertEquals(0xFF0A84FFL, settings.iconAccentColorRgb)
+        assertEquals(com.hnmlabs.hnmui.model.HnmAccentTheme.SAPPHIRE, settings.accentTheme)
+    }
+
+    @Test
+    fun `accent theme cycles through all 7 curated themes and resolves distinct theme colors`() {
+        val entries = com.hnmlabs.hnmui.model.HnmAccentTheme.entries
+        assertEquals(7, entries.size)
+        assertTrue(entries.contains(com.hnmlabs.hnmui.model.HnmAccentTheme.SAPPHIRE))
+        assertTrue(entries.contains(com.hnmlabs.hnmui.model.HnmAccentTheme.EMERALD))
+        assertTrue(entries.contains(com.hnmlabs.hnmui.model.HnmAccentTheme.AMBER))
+        assertTrue(entries.contains(com.hnmlabs.hnmui.model.HnmAccentTheme.AMETHYST))
+        assertTrue(entries.contains(com.hnmlabs.hnmui.model.HnmAccentTheme.RUBY))
+        assertTrue(entries.contains(com.hnmlabs.hnmui.model.HnmAccentTheme.GLACIER))
+        assertTrue(entries.contains(com.hnmlabs.hnmui.model.HnmAccentTheme.OBSIDIAN))
+
+        var cur = com.hnmlabs.hnmui.model.HnmAccentTheme.SAPPHIRE
+        for (i in 0 until 7) {
+            cur = cur.nextTheme()
+        }
+        assertEquals(com.hnmlabs.hnmui.model.HnmAccentTheme.SAPPHIRE, cur)
+
+        val emeraldColors = com.hnmlabs.hnmui.ui.theme.resolveThemeColors(
+            isDark = true,
+            accentTheme = com.hnmlabs.hnmui.model.HnmAccentTheme.EMERALD
+        )
+        assertEquals(
+            androidx.compose.ui.graphics.Color(com.hnmlabs.hnmui.model.HnmAccentTheme.EMERALD.primaryColorArgb),
+            emeraldColors.accentBlue
+        )
+        assertEquals(
+            androidx.compose.ui.graphics.Color(com.hnmlabs.hnmui.model.HnmAccentTheme.EMERALD.secondaryColorArgb),
+            emeraldColors.accentCyan
         )
     }
 

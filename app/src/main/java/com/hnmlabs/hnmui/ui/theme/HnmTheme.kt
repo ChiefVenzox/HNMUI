@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.hnmlabs.hnmui.model.HnmAccentTheme
 import com.hnmlabs.hnmui.model.HnmThemeMode
 
 private val AppearanceTransitionEasing = CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
@@ -33,6 +34,28 @@ fun resolveIsDarkTheme(mode: HnmThemeMode, systemDark: Boolean): Boolean = when 
     HnmThemeMode.SYSTEM -> systemDark
     HnmThemeMode.DARK -> true
     HnmThemeMode.LIGHT -> false
+}
+
+/**
+ * Seçilen tasarım renk temasına (HnmAccentTheme) ve sistem Koyu/Açık moduna göre
+ * temel renk jetonlarını dinamik olarak çözümler.
+ */
+fun resolveThemeColors(
+    isDark: Boolean,
+    accentTheme: HnmAccentTheme = HnmAccentTheme.SAPPHIRE
+): HnmColors {
+    val base = if (isDark) DarkHnmColors else LightHnmColors
+    val prim = Color(accentTheme.primaryColorArgb)
+    val sec = Color(accentTheme.secondaryColorArgb)
+    return base.copy(
+        accentBlue = prim,
+        accentCyan = sec,
+        verticalSliderFill = if (isDark) {
+            if (accentTheme == HnmAccentTheme.OBSIDIAN) Color(0xDBFFFFFF) else prim.copy(alpha = 0.92f)
+        } else {
+            prim
+        }
+    )
 }
 
 /**
@@ -234,10 +257,11 @@ private fun animateThemeToken(target: Color, label: String): Color {
 @Composable
 fun HnmLauncherTheme(
     themeMode: HnmThemeMode = HnmThemeMode.SYSTEM,
+    accentTheme: HnmAccentTheme = HnmAccentTheme.SAPPHIRE,
     content: @Composable () -> Unit
 ) {
     val isDark = resolveIsDarkTheme(mode = themeMode, systemDark = isSystemInDarkTheme())
-    val target = if (isDark) DarkHnmColors else LightHnmColors
+    val target = resolveThemeColors(isDark = isDark, accentTheme = accentTheme)
 
     val animatedColors = HnmColors(
         isDark = isDark,

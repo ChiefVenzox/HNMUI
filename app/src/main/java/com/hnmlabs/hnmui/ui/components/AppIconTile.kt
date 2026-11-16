@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
@@ -53,8 +54,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import com.hnmlabs.hnmui.model.AppComponentKey
 import com.hnmlabs.hnmui.model.AppItem
+import com.hnmlabs.hnmui.model.IconTintStyle
 import com.hnmlabs.hnmui.model.ResolvedHomeItem
 import com.hnmlabs.hnmui.ui.theme.HnmMotion
 import com.hnmlabs.hnmui.ui.theme.HnmPalette
@@ -69,6 +74,12 @@ import kotlin.math.sin
  * Değeri yalnızca Modifier.graphicsLayer içinde okunarak 0 recomposition ile 120 FPS titreşim sağlar.
  */
 val LocalEditJigglePhase = compositionLocalOf<State<Float>?> { null }
+
+/**
+ * iOS 18 benzeri Buzlu Cam İkon Temalama motoru için aktif stil ve vurgu rengi akışı.
+ */
+val LocalIconTintStyle = compositionLocalOf { IconTintStyle.ORIGINAL }
+val LocalIconAccentColor = compositionLocalOf { 0xFF0A84FFL }
 
 private val PlaceholderIconBrush = Brush.linearGradient(
     colors = listOf(Color(0xFF1E293B), Color(0xFF334155))
@@ -227,9 +238,129 @@ fun AppIconTile(
     }
 }
 
+@Immutable
+private data class GlassIconStyleConfig(
+    val bgTop: Color,
+    val bgBottom: Color,
+    val borderTop: Color,
+    val borderBottom: Color,
+    val colorMatrix: ColorMatrix,
+    val isDarkTone: Boolean
+)
+
+private fun computeGlassIconStyling(
+    style: IconTintStyle,
+    accentArgb: Long,
+    isDarkSystem: Boolean
+): GlassIconStyleConfig {
+    val isDark = when (style) {
+        IconTintStyle.GLASS_PEARL -> false
+        IconTintStyle.GLASS_MIDNIGHT, IconTintStyle.GLASS_TINTED -> true
+        else -> isDarkSystem
+    }
+
+    return when (style) {
+        IconTintStyle.GLASS_PEARL -> {
+            val cm = ColorMatrix(
+                floatArrayOf(
+                    0.20f * 0.33f, 0.20f * 0.59f, 0.20f * 0.11f, 0f, 25f,
+                    0.25f * 0.33f, 0.25f * 0.59f, 0.25f * 0.11f, 0f, 30f,
+                    0.32f * 0.33f, 0.32f * 0.59f, 0.32f * 0.11f, 0f, 38f,
+                    0f,            0f,            0f,            1f, 0f
+                )
+            )
+            GlassIconStyleConfig(
+                bgTop = Color(0xF5FFFFFF),
+                bgBottom = Color(0xEDE2E8F0),
+                borderTop = Color(0x99FFFFFF),
+                borderBottom = Color(0x3394A3B8),
+                colorMatrix = cm,
+                isDarkTone = false
+            )
+        }
+        IconTintStyle.GLASS_MIDNIGHT -> {
+            val cm = ColorMatrix(
+                floatArrayOf(
+                    0.92f * 0.33f, 0.92f * 0.59f, 0.92f * 0.11f, 0f, 15f,
+                    0.94f * 0.33f, 0.94f * 0.59f, 0.94f * 0.11f, 0f, 15f,
+                    0.98f * 0.33f, 0.98f * 0.59f, 0.98f * 0.11f, 0f, 15f,
+                    0f,            0f,            0f,            1f, 0f
+                )
+            )
+            GlassIconStyleConfig(
+                bgTop = Color(0xDD1E293B),
+                bgBottom = Color(0xF20F172A),
+                borderTop = Color(0x66FFFFFF),
+                borderBottom = Color(0x22FFFFFF),
+                colorMatrix = cm,
+                isDarkTone = true
+            )
+        }
+        IconTintStyle.GLASS_TINTED -> {
+            val accent = Color(accentArgb)
+            val r = accent.red
+            val g = accent.green
+            val b = accent.blue
+            val cm = ColorMatrix(
+                floatArrayOf(
+                    r * 0.33f, r * 0.59f, r * 0.11f, 0f, r * 30f,
+                    g * 0.33f, g * 0.59f, g * 0.11f, 0f, g * 30f,
+                    b * 0.33f, b * 0.59f, b * 0.11f, 0f, b * 30f,
+                    0f,        0f,        0f,        1f, 0f
+                )
+            )
+            GlassIconStyleConfig(
+                bgTop = accent.copy(alpha = 0.38f),
+                bgBottom = Color(0xEE0B111F),
+                borderTop = accent.copy(alpha = 0.82f),
+                borderBottom = accent.copy(alpha = 0.28f),
+                colorMatrix = cm,
+                isDarkTone = true
+            )
+        }
+        else -> {
+            if (isDark) {
+                val cm = ColorMatrix(
+                    floatArrayOf(
+                        0.92f * 0.33f, 0.92f * 0.59f, 0.92f * 0.11f, 0f, 15f,
+                        0.94f * 0.33f, 0.94f * 0.59f, 0.94f * 0.11f, 0f, 15f,
+                        0.98f * 0.33f, 0.98f * 0.59f, 0.98f * 0.11f, 0f, 15f,
+                        0f,            0f,            0f,            1f, 0f
+                    )
+                )
+                GlassIconStyleConfig(
+                    bgTop = Color(0xDD1E293B),
+                    bgBottom = Color(0xF20F172A),
+                    borderTop = Color(0x66FFFFFF),
+                    borderBottom = Color(0x22FFFFFF),
+                    colorMatrix = cm,
+                    isDarkTone = true
+                )
+            } else {
+                val cm = ColorMatrix(
+                    floatArrayOf(
+                        0.20f * 0.33f, 0.20f * 0.59f, 0.20f * 0.11f, 0f, 25f,
+                        0.25f * 0.33f, 0.25f * 0.59f, 0.25f * 0.11f, 0f, 30f,
+                        0.32f * 0.33f, 0.32f * 0.59f, 0.32f * 0.11f, 0f, 38f,
+                        0f,            0f,            0f,            1f, 0f
+                    )
+                )
+                GlassIconStyleConfig(
+                    bgTop = Color(0xF5FFFFFF),
+                    bgBottom = Color(0xEDE2E8F0),
+                    borderTop = Color(0x99FFFFFF),
+                    borderBottom = Color(0x3394A3B8),
+                    colorMatrix = cm,
+                    isDarkTone = false
+                )
+            }
+        }
+    }
+}
+
 /**
- * İkon görselini arkasında herhangi bir koyu kutu veya yapay gölge izi olmadan
- * doğrudan pürüzsüz Squircle formunda çizer.
+ * İkon görselini orijinal renkleriyle veya iOS 18 tarzı buzlu cam temalama
+ * stiliyle pürüzsüz Squircle formunda çizer.
  */
 @Composable
 fun AppSquircleArtwork(
@@ -238,26 +369,73 @@ fun AppSquircleArtwork(
     size: Dp,
     modifier: Modifier = Modifier
 ) {
-    if (bitmap != null) {
-        Image(
-            bitmap = bitmap,
-            contentDescription = label,
-            contentScale = ContentScale.Crop,
-            modifier = modifier
-                .size(size)
-                .clip(SquircleShape.Icon)
-        )
-    } else {
-        Box(
-            modifier = modifier
-                .size(size)
-                .clip(SquircleShape.Icon)
-                .background(PlaceholderIconBrush),
-            contentAlignment = Alignment.Center
-        ) {
+    val tintStyle = LocalIconTintStyle.current
+    val accentRgb = LocalIconAccentColor.current
+    val colors = HnmTheme.colors
+
+    if (tintStyle == IconTintStyle.ORIGINAL) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = label,
+                contentScale = ContentScale.Crop,
+                modifier = modifier
+                    .size(size)
+                    .clip(SquircleShape.Icon)
+            )
+        } else {
+            Box(
+                modifier = modifier
+                    .size(size)
+                    .clip(SquircleShape.Icon)
+                    .background(PlaceholderIconBrush),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label.take(1).uppercase(),
+                    color = Color.White,
+                    fontSize = (size.value * 0.38f).sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        return
+    }
+
+    val styleConfig = remember(tintStyle, accentRgb, colors.isDark) {
+        computeGlassIconStyling(tintStyle, accentRgb, colors.isDark)
+    }
+
+    val fillBrush = remember(styleConfig.bgTop, styleConfig.bgBottom) {
+        Brush.verticalGradient(listOf(styleConfig.bgTop, styleConfig.bgBottom))
+    }
+    val borderBrush = remember(styleConfig.borderTop, styleConfig.borderBottom) {
+        Brush.verticalGradient(listOf(styleConfig.borderTop, styleConfig.borderBottom))
+    }
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(SquircleShape.Icon)
+            .background(fillBrush, SquircleShape.Icon)
+            .border(1.dp, borderBrush, SquircleShape.Icon),
+        contentAlignment = Alignment.Center
+    ) {
+        if (bitmap != null) {
+            val innerSize = (size * 0.74f).coerceAtLeast(10.dp)
+            Image(
+                bitmap = bitmap,
+                contentDescription = label,
+                contentScale = ContentScale.Fit,
+                colorFilter = ColorFilter.colorMatrix(styleConfig.colorMatrix),
+                modifier = Modifier
+                    .size(innerSize)
+                    .clip(RoundedCornerShape((innerSize.value * 0.22f).dp))
+            )
+        } else {
             Text(
                 text = label.take(1).uppercase(),
-                color = Color.White,
+                color = if (styleConfig.isDarkTone) Color.White else Color(0xFF0F172A),
                 fontSize = (size.value * 0.38f).sp,
                 fontWeight = FontWeight.Bold
             )

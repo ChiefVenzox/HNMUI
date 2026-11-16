@@ -145,8 +145,131 @@ enum class HnmThemeMode(val titleTr: String, val shortTitleTr: String) {
 }
 
 /**
+ * iOS 18 tarzı saf buzlu cam ikon temalama stilleri:
+ * - ORIGINAL: Standart orijinal renkli uygulama ikonları
+ * - GLASS_AUTO: Sistem temasına (Açık/Koyu) göre sedefli cam veya gece camı
+ * - GLASS_PEARL: Gün ışığı sedefli açık buzlu cam
+ * - GLASS_MIDNIGHT: Gece yarısı koyu buzlu cam
+ * - GLASS_TINTED: Özel seçilen vurgu rengiyle cam dokusu
+ */
+@Serializable
+enum class IconTintStyle(val titleTr: String, val shortTitleTr: String) {
+    @SerialName("original")
+    ORIGINAL(titleTr = "Orijinal İkonlar", shortTitleTr = "Orijinal"),
+
+    @SerialName("glass_auto")
+    GLASS_AUTO(titleTr = "Buzlu Cam (Otomatik)", shortTitleTr = "Otomatik"),
+
+    @SerialName("glass_pearl")
+    GLASS_PEARL(titleTr = "Sedefli Açık Cam", shortTitleTr = "Açık"),
+
+    @SerialName("glass_midnight")
+    GLASS_MIDNIGHT(titleTr = "Gece Koyu Cam", shortTitleTr = "Koyu"),
+
+    @SerialName("glass_tinted")
+    GLASS_TINTED(titleTr = "Vurgu Renkli Cam", shortTitleTr = "Vurgu");
+
+    fun nextStyle(): IconTintStyle = when (this) {
+        ORIGINAL -> GLASS_AUTO
+        GLASS_AUTO -> GLASS_PEARL
+        GLASS_PEARL -> GLASS_MIDNIGHT
+        GLASS_MIDNIGHT -> GLASS_TINTED
+        GLASS_TINTED -> ORIGINAL
+    }
+}
+
+/**
+ * HNMUI profesyonel cam ve arayüz renk temaları:
+ * - SAPPHIRE: Kozmik Safir (İkonik iOS elektrik mavisi)
+ * - EMERALD: Zümrüt Kristali (Canlı yeşil cam parıltısı)
+ * - AMBER: Gün Batımı Amberi (Sıcak altın ve portakal tonları)
+ * - AMETHYST: Ametist Parıltısı (Fütüristik neon mor cam)
+ * - RUBY: Yakut Neonu (Canlı yakut kırmızısı ve pembe)
+ * - GLACIER: Buzul Kristali (Kutup mavisi berrak cam)
+ * - OBSIDIAN: Obsidiyen & Platin (Saf minimalist siyah-gümüş cam)
+ */
+@Serializable
+enum class HnmAccentTheme(
+    val titleTr: String,
+    val shortTitleTr: String,
+    val primaryColorArgb: Long,
+    val secondaryColorArgb: Long,
+    val descriptionTr: String
+) {
+    @SerialName("sapphire")
+    SAPPHIRE(
+        titleTr = "Kozmik Safir",
+        shortTitleTr = "Safir",
+        primaryColorArgb = 0xFF0A84FFL,
+        secondaryColorArgb = 0xFF38BDF8L,
+        descriptionTr = "İkonik iOS elektrik mavisi ve berrak gökyüzü camı"
+    ),
+
+    @SerialName("emerald")
+    EMERALD(
+        titleTr = "Zümrüt Kristali",
+        shortTitleTr = "Zümrüt",
+        primaryColorArgb = 0xFF30D158L,
+        secondaryColorArgb = 0xFF34D399L,
+        descriptionTr = "Dingin yeşil parıltılı lüks buzlu cam estetiği"
+    ),
+
+    @SerialName("amber")
+    AMBER(
+        titleTr = "Gün Batımı Amberi",
+        shortTitleTr = "Amber",
+        primaryColorArgb = 0xFFFF9F0AL,
+        secondaryColorArgb = 0xFFFB923CL,
+        descriptionTr = "Sıcak altın ve gün batımı kehribar tonları"
+    ),
+
+    @SerialName("amethyst")
+    AMETHYST(
+        titleTr = "Ametist Parıltısı",
+        shortTitleTr = "Ametist",
+        primaryColorArgb = 0xFFAF52DEL,
+        secondaryColorArgb = 0xFFC084FCL,
+        descriptionTr = "Fütüristik derin mor ve neon cam yansımaları"
+    ),
+
+    @SerialName("ruby")
+    RUBY(
+        titleTr = "Yakut Neonu",
+        shortTitleTr = "Yakut",
+        primaryColorArgb = 0xFFFF375FL,
+        secondaryColorArgb = 0xFFFB7185L,
+        descriptionTr = "Canlı yakut kırmızısı ve enerjik gül kurusu cam"
+    ),
+
+    @SerialName("glacier")
+    GLACIER(
+        titleTr = "Buzul Kristali",
+        shortTitleTr = "Buzul",
+        primaryColorArgb = 0xFF64D2FFL,
+        secondaryColorArgb = 0xFF38BDF8L,
+        descriptionTr = "Kutup mavisi berrak kristal cam dokusu"
+    ),
+
+    @SerialName("obsidian")
+    OBSIDIAN(
+        titleTr = "Obsidiyen & Platin",
+        shortTitleTr = "Platin",
+        primaryColorArgb = 0xFFE2E8F0L,
+        secondaryColorArgb = 0xFF94A3B8L,
+        descriptionTr = "Saf minimalist siyah cam ve platin gümüş tonlar"
+    );
+
+    fun nextTheme(): HnmAccentTheme {
+        val entries = entries
+        val idx = entries.indexOf(this)
+        return entries[(idx + 1) % entries.size]
+    }
+}
+
+/**
  * Kullanıcının HNM Ayarlar içerisinden değiştirebildiği minimalist arayüz,
- * ızgara (7x7'ye kadar), klasör, Dock ve görünüm modu tercihleri.
+ * ızgara (7x7'ye kadar), klasör, Dock, görünüm modu, tasarım renk teması,
+ * buzlu cam ikon teması ve Akıllı Cam Kapsül (Dynamic Glass Island) tercihleri.
  */
 @Immutable
 @Serializable
@@ -164,7 +287,14 @@ data class LauncherCustomizationSettings(
     val interceptSystemSettingsApp: Boolean = true,
     val hapticFeedbackEnabled: Boolean = true,
     val useIosStatusBar: Boolean = true,
-    val themeMode: HnmThemeMode = HnmThemeMode.SYSTEM
+    val themeMode: HnmThemeMode = HnmThemeMode.SYSTEM,
+    val accentTheme: HnmAccentTheme = HnmAccentTheme.SAPPHIRE,
+    val iconTintStyle: IconTintStyle = IconTintStyle.ORIGINAL,
+    val iconAccentColorRgb: Long = 0xFF0A84FFL,
+    val dynamicIslandEnabled: Boolean = true,
+    val allowScreenRotation: Boolean = true,
+    val tabletLandscapeColumns: Int = 6,
+    val tabletLandscapeRows: Int = 4
 )
 
 /**

@@ -1,5 +1,6 @@
 package com.hnmlabs.hnmui.ui.surfaces
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -102,10 +105,13 @@ fun TodayViewPage(
     onDeleteQuickNote: (String) -> Unit,
     onPickWidget: () -> Unit,
     onRemoveWidget: (Int) -> Unit,
+    todayDualColumn: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val colors = HnmTheme.colors
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isDualColumn = todayDualColumn || isTabletHardwareDetected || configuration.screenWidthDp >= 600
     val currentOnRemoveWidget by rememberUpdatedState(onRemoveWidget)
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     var batteryInfo by remember { mutableStateOf(100 to false) }
@@ -144,17 +150,17 @@ fun TodayViewPage(
         }
     }
 
-    var noteDraft by remember { mutableStateOf("") }
+    val horizontalPadding = if (configuration.screenWidthDp >= 900) 40.dp else if (isDualColumn) 28.dp else 20.dp
 
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .hnmSafeTopPadding(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 112.dp),
+        contentPadding = PaddingValues(start = horizontalPadding, end = horizontalPadding, top = 20.dp, bottom = 112.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item(key = "header") {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = dateLabel.uppercase(trLocale),
                     style = MaterialTheme.typography.labelMedium.copy(shadow = WallpaperLabelShadow),
@@ -165,12 +171,30 @@ fun TodayViewPage(
                     style = MaterialTheme.typography.headlineLarge.copy(shadow = WallpaperLabelShadow),
                     color = colors.onWallpaperPrimary
                 )
-                if (isTabletHardwareDetected) {
-                    Text(
-                        text = "Telefon uyumluluk profili aktif • Tablet ızgarası rezerve",
-                        style = MaterialTheme.typography.bodyMedium.copy(shadow = WallpaperLabelShadow),
-                        color = Color(0xFF38BDF8)
-                    )
+                if (isTabletHardwareDetected || isDualColumn) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = colors.accentCyan.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, colors.accentCyan.copy(alpha = 0.35f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(colors.accentCyan)
+                            )
+                            Text(
+                                text = "HNMUI Tablet & Geniş Ekran Cam Deneyimi",
+                                style = MaterialTheme.typography.labelSmall.copy(shadow = WallpaperLabelShadow),
+                                color = colors.accentCyan
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -178,398 +202,534 @@ fun TodayViewPage(
         val showNotificationBanner =
             BuildConfig.SUPPORTS_NOTIFICATION_LISTENER && !isNotificationAccessEnabled
 
-        if (!isDefaultLauncher || showNotificationBanner) {
-            item(key = "setup_banners") {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (!isDefaultLauncher) {
-                        SetupActionCard(
-                            icon = {
-                                Icon(
-                                    imageVector = Icons.Rounded.Home,
-                                    contentDescription = null,
-                                    tint = colors.accentCyan
-                                )
-                            },
-                            title = "HNMUI'yi Varsayılan Yap",
-                            subtitle = "Ana ekran tuşu ve uygulama kısayolları için etkinleştirin",
-                            actionLabel = "Seç",
-                            onClick = onRequestDefaultLauncher
+        if (isDualColumn) {
+            item(key = "dual_dashboard") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        if (!isDefaultLauncher || showNotificationBanner) {
+                            SetupBanners(
+                                isDefaultLauncher = isDefaultLauncher,
+                                showNotificationBanner = showNotificationBanner,
+                                onRequestDefaultLauncher = onRequestDefaultLauncher,
+                                onRequestNotificationAccess = onRequestNotificationAccess
+                            )
+                        }
+                        GlanceMetricsCard(
+                            batteryInfo = batteryInfo,
+                            targetRefreshRateHz = targetRefreshRateHz,
+                            totalUnreadBadges = totalUnreadBadges,
+                            installedAppCount = installedAppCount
+                        )
+                        WidgetsSectionCard(
+                            distinctWidgetIds = distinctWidgetIds,
+                            widgetHostManager = widgetHostManager,
+                            onPickWidget = onPickWidget,
+                            onRemoveWidget = onRemoveWidget
                         )
                     }
-                    if (showNotificationBanner) {
-                        SetupActionCard(
-                            icon = {
-                                Icon(
-                                    imageVector = Icons.Rounded.NotificationsActive,
-                                    contentDescription = null,
-                                    tint = HnmPalette.BadgeRed
-                                )
-                            },
-                            title = "Canlı Bildirim Rozetleri",
-                            subtitle = "İkon üzerinde okunmamış bildirim sayısını görmek için izin verin",
-                            actionLabel = "İzin Ver",
-                            onClick = onRequestNotificationAccess
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        if (suggestedApps.isNotEmpty()) {
+                            SuggestedAppsCard(
+                                suggestedApps = suggestedApps,
+                                isWide = true,
+                                cachedIconProvider = cachedIconProvider,
+                                loadIconSuspend = loadIconSuspend,
+                                onLaunchApp = onLaunchApp,
+                                onAppLongPress = onAppLongPress
+                            )
+                        }
+                        QuickNotesCard(
+                            quickNotes = quickNotes,
+                            onAddQuickNote = onAddQuickNote,
+                            onToggleQuickNote = onToggleQuickNote,
+                            onDeleteQuickNote = onDeleteQuickNote
                         )
                     }
                 }
             }
+        } else {
+            if (!isDefaultLauncher || showNotificationBanner) {
+                item(key = "setup_banners") {
+                    SetupBanners(
+                        isDefaultLauncher = isDefaultLauncher,
+                        showNotificationBanner = showNotificationBanner,
+                        onRequestDefaultLauncher = onRequestDefaultLauncher,
+                        onRequestNotificationAccess = onRequestNotificationAccess
+                    )
+                }
+            }
+            item(key = "glance_metrics") {
+                GlanceMetricsCard(
+                    batteryInfo = batteryInfo,
+                    targetRefreshRateHz = targetRefreshRateHz,
+                    totalUnreadBadges = totalUnreadBadges,
+                    installedAppCount = installedAppCount
+                )
+            }
+            if (suggestedApps.isNotEmpty()) {
+                item(key = "suggested_card") {
+                    SuggestedAppsCard(
+                        suggestedApps = suggestedApps,
+                        isWide = false,
+                        cachedIconProvider = cachedIconProvider,
+                        loadIconSuspend = loadIconSuspend,
+                        onLaunchApp = onLaunchApp,
+                        onAppLongPress = onAppLongPress
+                    )
+                }
+            }
+            item(key = "quick_notes") {
+                QuickNotesCard(
+                    quickNotes = quickNotes,
+                    onAddQuickNote = onAddQuickNote,
+                    onToggleQuickNote = onToggleQuickNote,
+                    onDeleteQuickNote = onDeleteQuickNote
+                )
+            }
+            item(key = "widgets_section") {
+                WidgetsSectionCard(
+                    distinctWidgetIds = distinctWidgetIds,
+                    widgetHostManager = widgetHostManager,
+                    onPickWidget = onPickWidget,
+                    onRemoveWidget = onRemoveWidget
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SetupBanners(
+    isDefaultLauncher: Boolean,
+    showNotificationBanner: Boolean,
+    onRequestDefaultLauncher: () -> Unit,
+    onRequestNotificationAccess: () -> Unit
+) {
+    val colors = HnmTheme.colors
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (!isDefaultLauncher) {
+            SetupActionCard(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Rounded.Home,
+                        contentDescription = null,
+                        tint = colors.accentCyan
+                    )
+                },
+                title = "HNMUI'yi Varsayılan Yap",
+                subtitle = "Ana ekran tuşu ve uygulama kısayolları için etkinleştirin",
+                actionLabel = "Seç",
+                onClick = onRequestDefaultLauncher
+            )
+        }
+        if (showNotificationBanner) {
+            SetupActionCard(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Rounded.NotificationsActive,
+                        contentDescription = null,
+                        tint = HnmPalette.BadgeRed
+                    )
+                },
+                title = "Canlı Bildirim Rozetleri",
+                subtitle = "İkon üzerinde okunmamış bildirim sayısını görmek için izin verin",
+                actionLabel = "İzin Ver",
+                onClick = onRequestNotificationAccess
+            )
+        }
+    }
+}
+
+@Composable
+private fun GlanceMetricsCard(
+    batteryInfo: Pair<Int, Boolean>,
+    targetRefreshRateHz: Int,
+    totalUnreadBadges: Int,
+    installedAppCount: Int
+) {
+    val colors = HnmTheme.colors
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        GlassSurface(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(24.dp),
+            tone = GlassTone.CARD
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = if (batteryInfo.second) {
+                            Icons.Rounded.BatteryChargingFull
+                        } else {
+                            Icons.Rounded.BatteryStd
+                        },
+                        contentDescription = null,
+                        tint = colors.successGreen,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Pil Durumu",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Text(
+                    text = "%${batteryInfo.first}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = if (batteryInfo.second) {
+                        "Şarj oluyor • ${targetRefreshRateHz} Hz"
+                    } else {
+                        "${targetRefreshRateHz} Hz akıcı mod"
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colors.textMuted
+                )
+            }
         }
 
-        item(key = "glance_metrics") {
+        GlassSurface(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(24.dp),
+            tone = GlassTone.CARD
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = if (BuildConfig.SUPPORTS_NOTIFICATION_LISTENER) {
+                            Icons.Rounded.NotificationsActive
+                        } else {
+                            Icons.Rounded.Widgets
+                        },
+                        contentDescription = null,
+                        tint = colors.accentCyan,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = if (BuildConfig.SUPPORTS_NOTIFICATION_LISTENER) {
+                            "Bildirimler"
+                        } else {
+                            "Uygulamalar"
+                        },
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Text(
+                    text = if (BuildConfig.SUPPORTS_NOTIFICATION_LISTENER) {
+                        totalUnreadBadges.toString()
+                    } else {
+                        installedAppCount.toString()
+                    },
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = if (BuildConfig.SUPPORTS_NOTIFICATION_LISTENER) {
+                        if (totalUnreadBadges == 0) "Her şey güncel" else "Okunmamış bildirim"
+                    } else {
+                        "Arşivde hazır"
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colors.textMuted
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestedAppsCard(
+    suggestedApps: List<AppItem>,
+    isWide: Boolean,
+    cachedIconProvider: (AppComponentKey) -> ImageBitmap?,
+    loadIconSuspend: suspend (AppComponentKey) -> ImageBitmap?,
+    onLaunchApp: (AppItem) -> Unit,
+    onAppLongPress: (AppItem) -> Unit
+) {
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(26.dp),
+        tone = GlassTone.CARD
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text(
+                text = "HNM Önerileri",
+                style = MaterialTheme.typography.titleMedium
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                GlassSurface(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(24.dp),
-                    tone = GlassTone.CARD
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (batteryInfo.second) {
-                                    Icons.Rounded.BatteryChargingFull
-                                } else {
-                                    Icons.Rounded.BatteryStd
-                                },
-                                contentDescription = null,
-                                tint = colors.successGreen,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = "Pil Durumu",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                        Text(
-                            text = "%${batteryInfo.first}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = if (batteryInfo.second) {
-                                "Şarj oluyor • ${targetRefreshRateHz} Hz"
-                            } else {
-                                "${targetRefreshRateHz} Hz akıcı mod"
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = colors.textMuted
-                        )
-                    }
-                }
-
-                GlassSurface(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(24.dp),
-                    tone = GlassTone.CARD
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (BuildConfig.SUPPORTS_NOTIFICATION_LISTENER) {
-                                    Icons.Rounded.NotificationsActive
-                                } else {
-                                    Icons.Rounded.Widgets
-                                },
-                                contentDescription = null,
-                                tint = colors.accentCyan,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = if (BuildConfig.SUPPORTS_NOTIFICATION_LISTENER) {
-                                    "Bildirimler"
-                                } else {
-                                    "Uygulamalar"
-                                },
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                        Text(
-                            text = if (BuildConfig.SUPPORTS_NOTIFICATION_LISTENER) {
-                                totalUnreadBadges.toString()
-                            } else {
-                                installedAppCount.toString()
-                            },
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = if (BuildConfig.SUPPORTS_NOTIFICATION_LISTENER) {
-                                if (totalUnreadBadges == 0) "Her şey güncel" else "Okunmamış bildirim"
-                            } else {
-                                "Arşivde hazır"
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = colors.textMuted
-                        )
-                    }
-                }
-            }
-        }
-
-        if (suggestedApps.isNotEmpty()) {
-            item(key = "suggested_card") {
-                GlassSurface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(26.dp),
-                    tone = GlassTone.CARD
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Text(
-                            text = "HNM Önerileri",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            suggestedApps.take(4).forEach { app ->
-                                AppIconTile(
-                                    app = app,
-                                    iconSize = 54.dp,
-                                    onGlassSurface = true,
-                                    cachedIconProvider = cachedIconProvider,
-                                    loadIconSuspend = loadIconSuspend,
-                                    onClick = { onLaunchApp(app) },
-                                    onLongClick = { onAppLongPress(app) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        item(key = "quick_notes") {
-            GlassSurface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(26.dp),
-                tone = GlassTone.CARD
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "Hızlı Notlar",
-                        style = MaterialTheme.typography.titleMedium
+                suggestedApps.take(if (isWide) 6 else 4).forEach { app ->
+                    AppIconTile(
+                        app = app,
+                        iconSize = 54.dp,
+                        onGlassSurface = true,
+                        cachedIconProvider = cachedIconProvider,
+                        loadIconSuspend = loadIconSuspend,
+                        onClick = { onLaunchApp(app) },
+                        onLongClick = { onAppLongPress(app) }
                     )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(colors.surfaceSubtleFill)
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (noteDraft.isEmpty()) {
-                                Text(
-                                    text = "Yeni not veya hatırlatma ekle...",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = colors.textMuted
-                                )
-                            }
-                            BasicTextField(
-                                value = noteDraft,
-                                onValueChange = { noteDraft = it },
-                                singleLine = true,
-                                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                    color = colors.textPrimary
-                                ),
-                                cursorBrush = SolidColor(colors.accentCyan),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(
-                                    onDone = {
-                                        if (noteDraft.isNotBlank()) {
-                                            onAddQuickNote(noteDraft)
-                                            noteDraft = ""
-                                        }
-                                    }
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(colors.accentBlue)
-                                .clickable {
-                                    if (noteDraft.isNotBlank()) {
-                                        onAddQuickNote(noteDraft)
-                                        noteDraft = ""
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Add,
-                                contentDescription = "Not ekle",
-                                tint = Color.White
-                            )
-                        }
-                    }
-
-                    quickNotes.forEach { note ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { onToggleQuickNote(note.id) }
-                                .padding(vertical = 6.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = if (note.isDone) {
-                                    Icons.Rounded.CheckCircle
-                                } else {
-                                    Icons.Rounded.RadioButtonUnchecked
-                                },
-                                contentDescription = null,
-                                tint = if (note.isDone) colors.successGreen else colors.textMuted,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = note.text,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    textDecoration = if (note.isDone) {
-                                        TextDecoration.LineThrough
-                                    } else {
-                                        TextDecoration.None
-                                    },
-                                    color = if (note.isDone) {
-                                        colors.textMuted
-                                    } else {
-                                        colors.textPrimary
-                                    }
-                                ),
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(
-                                onClick = { onDeleteQuickNote(note.id) },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = "Sil",
-                                    tint = colors.textMuted,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
+    }
+}
 
-        item(key = "widgets_section") {
-            GlassSurface(
+@Composable
+private fun QuickNotesCard(
+    quickNotes: List<QuickNoteItem>,
+    onAddQuickNote: (String) -> Unit,
+    onToggleQuickNote: (String) -> Unit,
+    onDeleteQuickNote: (String) -> Unit
+) {
+    val colors = HnmTheme.colors
+    var noteDraft by remember { mutableStateOf("") }
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(26.dp),
+        tone = GlassTone.CARD
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "Hızlı Notlar",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(26.dp),
-                tone = GlassTone.CARD
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.surfaceSubtleFill)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Widgets,
-                                contentDescription = null,
-                                tint = colors.accentCyan
-                            )
-                            Text(
-                                text = "Android Widget'ları",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(colors.controlInactiveFill)
-                                .clickable(onClick = onPickWidget)
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = "+ Widget Ekle",
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
-
-                    if (distinctWidgetIds.isEmpty()) {
+                    if (noteDraft.isEmpty()) {
                         Text(
-                            text = "Hava durumu, takvim veya müzik gibi favori Android widget'larınızı buraya sabitleyebilirsiniz.",
+                            text = "Yeni not veya hatırlatma ekle...",
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.textMuted
                         )
-                    } else {
-                        distinctWidgetIds.forEach { widgetId ->
-                            key(widgetId) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(18.dp))
-                                        .padding(vertical = 4.dp)
-                                ) {
-                                    AndroidView(
-                                        factory = { ctx ->
-                                            widgetHostManager.createHostView(ctx, widgetId)
-                                                ?: android.widget.FrameLayout(ctx)
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(140.dp)
-                                    )
-                                    IconButton(
-                                        onClick = { onRemoveWidget(widgetId) },
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .size(26.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0x99000000))
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Close,
-                                            contentDescription = "Widget kaldır",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
+                    }
+                    BasicTextField(
+                        value = noteDraft,
+                        onValueChange = { noteDraft = it },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = colors.textPrimary
+                        ),
+                        cursorBrush = SolidColor(colors.accentCyan),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                if (noteDraft.isNotBlank()) {
+                                    onAddQuickNote(noteDraft)
+                                    noteDraft = ""
                                 }
+                            }
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(colors.accentBlue)
+                        .clickable {
+                            if (noteDraft.isNotBlank()) {
+                                onAddQuickNote(noteDraft)
+                                noteDraft = ""
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "Not ekle",
+                        tint = Color.White
+                    )
+                }
+            }
+
+            quickNotes.forEach { note ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { onToggleQuickNote(note.id) }
+                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (note.isDone) {
+                            Icons.Rounded.CheckCircle
+                        } else {
+                            Icons.Rounded.RadioButtonUnchecked
+                        },
+                        contentDescription = null,
+                        tint = if (note.isDone) colors.successGreen else colors.textMuted,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = note.text,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textDecoration = if (note.isDone) {
+                                TextDecoration.LineThrough
+                            } else {
+                                TextDecoration.None
+                            },
+                            color = if (note.isDone) {
+                                colors.textMuted
+                            } else {
+                                colors.textPrimary
+                            }
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = { onDeleteQuickNote(note.id) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Sil",
+                            tint = colors.textMuted,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WidgetsSectionCard(
+    distinctWidgetIds: List<Int>,
+    widgetHostManager: LauncherWidgetHostManager,
+    onPickWidget: () -> Unit,
+    onRemoveWidget: (Int) -> Unit
+) {
+    val colors = HnmTheme.colors
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(26.dp),
+        tone = GlassTone.CARD
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Widgets,
+                        contentDescription = null,
+                        tint = colors.accentCyan
+                    )
+                    Text(
+                        text = "Android Widget'ları",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(colors.controlInactiveFill)
+                        .clickable(onClick = onPickWidget)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "+ Widget Ekle",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+
+            if (distinctWidgetIds.isEmpty()) {
+                Text(
+                    text = "Hava durumu, takvim veya müzik gibi favori Android widget'larınızı buraya sabitleyebilirsiniz.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.textMuted
+                )
+            } else {
+                distinctWidgetIds.forEach { widgetId ->
+                    key(widgetId) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(18.dp))
+                                .padding(vertical = 4.dp)
+                        ) {
+                            AndroidView(
+                                factory = { ctx ->
+                                    widgetHostManager.createHostView(ctx, widgetId)
+                                        ?: android.widget.FrameLayout(ctx)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(140.dp)
+                            )
+                            IconButton(
+                                onClick = { onRemoveWidget(widgetId) },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(26.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0x99000000))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = "Widget kaldır",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
                             }
                         }
                     }
@@ -578,6 +738,7 @@ fun TodayViewPage(
         }
     }
 }
+
 
 @Composable
 private fun SetupActionCard(

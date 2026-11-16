@@ -5,6 +5,26 @@ All notable changes to **HNMUI** are documented in this file.
 
 ---
 
+## [Unreleased] (Tablet Support, Horizontal/Landscape Adaptation & Design Innovations)
+
+### 📱 Tablet & Landscape Mode Adaptation / Tablet & Yatay Mod Uyarlaması
+- **EN:** Activated full tablet and horizontal screen support (`enableTabletLayout = true`, `allowScreenRotation = true`). Enabled fluid orientation changes (`SCREEN_ORIENTATION_UNSPECIFIED`) with zero cold restarts (`android:configChanges` orientation handling). Implemented iPadOS-style floating centered glass Dock (`LauncherBottomDockBar`) with `widthIn(max = 680.dp)`, responsive 6x4 landscape / 6x5 portrait tablet grids, a 2-column Today View dashboard (`todayDualColumn = true`), responsive 3–4 category columns in App Library (`AppLibraryPage`), and ergonomic centered or TopEnd floating sheet cards for Control Center, Notification Center, Spotlight, and HNM Settings. Added an "Otomatik Ekran Döndürme & Yatay Mod" toggle in HNM Settings.
+- **TR:** Tam tablet ve yatay ekran deneyimi aktifleştirildi (`enableTabletLayout = true`, `allowScreenRotation = true`). Yeniden başlatma gerektirmeden (`onConfigurationChanged`) 120 FPS akıcılıkta ekran yönelim geçişleri sağlandı. iPadOS tarzı yüzen ortalanmış cam Dock (`widthIn(max = 680.dp)`), 6x4 yatay / 6x5 dikey tablet ızgaraları, 2 sütunlu Bugün Panosu (`todayDualColumn`), Uygulama Arşivi'nde 3-4 sütunlu kategori dizilimi ve Denetim Merkezi, Bildirim Merkezi, Spotlight ve Ayarlar panellerinde geniş ekran kart sınırlamaları eklendi. HNM Ayarlar'a "Otomatik Ekran Döndürme & Yatay Mod" açma/kapatma seçeneği getirildi.
+
+### 🏝️ Dynamic Glass Island / Akıllı Cam Kapsül
+- **EN:** Engineered an interactive, spring-animated frosted glass **Dynamic Glass Island** anchored at the top camera-cutout/status-bar strip. Fluidly expands with spring physics on live charging events (emerald glow + animated lightning bolt + `%XX` battery), volume/brightness feedback, and theme toggles, and expands on tap into an interactive micro-control island card (theme switch, volume, notifications, control center) with 120 FPS GPU draw-phase smoothness.
+- **TR:** Ekranın üst kamera deliği ve durum çubuğu şeridine entegre, yay fiziğine sahip interaktif buzlu cam **Akıllı Cam Kapsül (Dynamic Glass Island)** geliştirildi. Canlı şarj bağlantısında (yeşil neon parlama + şimşek + canlı pil yüzdesi), ses/parlaklık geri bildiriminde ve tema geçişlerinde otomatik genişler; dokunulduğunda mikro kontrol kartına dönüşür (120 FPS GPU çizim katmanı).
+
+### 🎨 Design Color Palettes & Dedicated Themes Settings / Tasarım Renk Temaları & Temalar Bölümü
+- **EN:** Created a dedicated **"Temalar ve Renk Paleti"** section in HNM Settings (`SettingsRoute.THEMES`) featuring 7 curated frosted glass design color themes (`Kozmik Safir`, `Zümrüt Kristali`, `Gün Batımı Amberi`, `Ametist Parıltısı`, `Yakut Neonu`, `Buzul Kristali`, `Obsidiyen & Platin`). Includes an interactive **Live Glass Theme Preview Card** rendering mini capsules and glass icons, integrated system appearance mode toggle (`Otomatik` / `Açık` / `Koyu`), iOS 18 tinted icon style selector, and glass opacity depth slider.
+- **TR:** HNM Ayarlar içerisine kapsamlı **"Temalar ve Renk Paleti"** sayfası eklendi (`SettingsRoute.THEMES`). 7 seçkin tasarım renk paleti (`Kozmik Safir`, `Zümrüt Kristali`, `Gün Batımı Amberi`, `Ametist Parıltısı`, `Yakut Neonu`, `Buzul Kristali`, `Obsidiyen & Platin`), minyatür kapsül ve cam ikonları simüle eden interaktif **Canlı Cam Önizleme Kartı**, Açık/Koyu görünüm modu seçici, buzlu cam ikon temalama motoru ve cam şeffaflık sürgüsü bir araya getirildi.
+
+### 🔇 Control Center Silent/Sound Toggle & Resilient Ringer Fix / Denetim Merkezi Sessiz/Sesli Ayarı Düzeltmesi
+- **EN:** Resolved the issue where sound/silent ringer mode could not be toggled from the Control Center. Added a dedicated **"Sessiz / Sesli" QuickToggleTile** in the 2x2 tool grid (`Icons.AutoMirrored.Rounded.VolumeOff` / `VolumeUp`) with live state tracking, tap-to-mute on the vertical volume slider icon, and built resilient audio stream fallback in `DeviceSystemController.toggleRingerMode` that seamlessly mutes/unmutes ring/notification streams even when Android Notification Policy / DND permission has not yet been granted.
+- **TR:** Denetim Merkezi'nde sessiz/sesli modunun değiştirilememesi sorunu kökten çözüldü: 2x2 hızlı araçlar arasına canlı durum takipli özel **"Sessiz / Sesli" Hızlı Butonu** eklendi; dikey ses sürgüsü ikonuna doğrudan sessize alma/sesi açma tıklama desteği sağlandı. Android 7+ DND izin kısıtlamasına takılmadan ring/notification ses akışları üzerinden anında sessize alma ve ses açma yapabilen dayanıklı `DeviceSystemController.toggleRingerMode` motoru entegre edildi.
+
+---
+
 ## [0.3.4-alpha] — 2026-11-13 (System Adaptive Glass & Zero-Miss Control Center)
 
 ### 🌗 System Adaptive Appearance Engine / Sistem Uyumlu Açık & Koyu Cam Motoru

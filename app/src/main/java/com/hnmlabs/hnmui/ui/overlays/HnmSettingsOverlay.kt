@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -45,9 +46,11 @@ import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.BrightnessAuto
 import androidx.compose.material.icons.rounded.BrightnessHigh
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.FlashlightOn
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Info
@@ -89,6 +92,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -104,7 +108,9 @@ import com.hnmlabs.hnmui.core.text.TurkishSearchNormalizer
 import com.hnmlabs.hnmui.data.InstalledAppsRepository
 import com.hnmlabs.hnmui.model.AppComponentKey
 import com.hnmlabs.hnmui.model.AppItem
+import com.hnmlabs.hnmui.model.HnmAccentTheme
 import com.hnmlabs.hnmui.model.HnmThemeMode
+import com.hnmlabs.hnmui.model.IconTintStyle
 import com.hnmlabs.hnmui.model.LauncherCustomizationSettings
 import com.hnmlabs.hnmui.ui.components.GlassSurface
 import com.hnmlabs.hnmui.ui.components.GlassTone
@@ -151,6 +157,7 @@ private fun <T> rememberAsyncResumableSnapshot(
 enum class SettingsRoute(val titleTr: String) {
     ROOT("Ayarlar"),
     CUSTOMIZATION("Ana Ekran, Klasör & Dock"),
+    THEMES("Temalar ve Renk Paleti"),
     CONNECTIVITY("Wi-Fi ve Bağlantılar"),
     DISPLAY_BRIGHTNESS("Ekran ve Parlaklık"),
     SOUND_HAPTICS("Ses ve Dokunuş"),
@@ -219,9 +226,15 @@ fun HnmSettingsOverlay(
                     )
                 )
                 .hnmSafeTopPadding()
-                .navigationBarsPadding()
+                .navigationBarsPadding(),
+            contentAlignment = Alignment.TopCenter
         ) {
-            AnimatedContent(
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 760.dp)
+            ) {
+                AnimatedContent(
                 targetState = currentRoute,
                 transitionSpec = {
                     if (targetState != SettingsRoute.ROOT) {
@@ -255,6 +268,12 @@ fun HnmSettingsOverlay(
                         isDefaultLauncher = isDefaultLauncher,
                         onUpdateCustomization = onUpdateCustomization,
                         onRequestDefaultLauncher = onRequestDefaultLauncher,
+                        onBack = { currentRoute = SettingsRoute.ROOT }
+                    )
+
+                    SettingsRoute.THEMES -> ThemesSubPage(
+                        customization = customization,
+                        onUpdateCustomization = onUpdateCustomization,
                         onBack = { currentRoute = SettingsRoute.ROOT }
                     )
 
@@ -303,6 +322,7 @@ fun HnmSettingsOverlay(
                         onBack = { currentRoute = SettingsRoute.ROOT }
                     )
                 }
+            }
             }
         }
     }
@@ -535,6 +555,10 @@ private fun SettingsRootPage(
                 "cam",
                 "duvar kağıdı",
                 "tema",
+                "temalar",
+                "renk",
+                "renkler",
+                "palet",
                 "görünüm",
                 "koyu",
                 "açık",
@@ -549,9 +573,18 @@ private fun SettingsRootPage(
                         icon = Icons.Rounded.GridView,
                         badgeColor = HnmPalette.AccentBlue,
                         title = "Ana Ekran, Klasör & Dock",
-                        subtitle = "Görünüm modu, 7×7 ızgara, klasör ve Dock",
+                        subtitle = "Izgara, klasör, Dock ve Akıllı Kapsül",
                         valueLabel = "${customization.gridColumns}×${customization.gridRows}",
                         onClick = { onNavigate(SettingsRoute.CUSTOMIZATION) }
+                    )
+                    SettingsDivider()
+                    SettingsNavRow(
+                        icon = Icons.Rounded.Palette,
+                        badgeColor = Color(customization.accentTheme.primaryColorArgb),
+                        title = "Temalar ve Renk Paleti",
+                        subtitle = "${customization.accentTheme.titleTr} • ${customization.themeMode.shortTitleTr}",
+                        valueLabel = customization.accentTheme.shortTitleTr,
+                        onClick = { onNavigate(SettingsRoute.THEMES) }
                     )
                     SettingsDivider()
                     SettingsNavRow(
@@ -770,6 +803,469 @@ private fun AppearanceModeSelectorCard(
 }
 
 @Composable
+private fun IconTintStyleSelectorCard(
+    selectedStyle: IconTintStyle,
+    selectedAccentColor: Long,
+    onSelectStyle: (IconTintStyle) -> Unit,
+    onSelectAccentColor: (Long) -> Unit
+) {
+    val colors = HnmTheme.colors
+    val accentColors = listOf(
+        0xFF0A84FFL to "Safir",
+        0xFF30D158L to "Zümrüt",
+        0xFFFF9F0AL to "Kehribar",
+        0xFFAF52DEL to "Ametist",
+        0xFFFF375FL to "Yakut",
+        0xFF64D2FFL to "Buzul"
+    )
+
+    SettingsGroupCard(title = "BUZLU CAM İKON TEMALAMA (iOS 18)") {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Tüm uygulama ikonlarını sedefli cam, gece camı veya özel vurgu rengiyle cam dokulu squircle formuna uyarlar",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.textMuted
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                val styles = listOf(
+                    IconTintStyle.ORIGINAL,
+                    IconTintStyle.GLASS_AUTO,
+                    IconTintStyle.GLASS_PEARL,
+                    IconTintStyle.GLASS_MIDNIGHT,
+                    IconTintStyle.GLASS_TINTED
+                )
+                styles.forEach { style ->
+                    val isSelected = selectedStyle == style
+                    SegmentedChoicePill(
+                        label = style.shortTitleTr,
+                        selected = isSelected,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onSelectStyle(style) }
+                    )
+                }
+            }
+
+            if (selectedStyle == IconTintStyle.GLASS_TINTED) {
+                SettingsDivider()
+                Text(
+                    text = "Özel Cam Vurgu Rengi",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    accentColors.forEach { (colorLong, _) ->
+                        val isColorSelected = selectedAccentColor == colorLong
+                        val c = Color(colorLong)
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(c)
+                                .border(
+                                    width = if (isColorSelected) 3.dp else 1.dp,
+                                    color = if (isColorSelected) Color.White else Color(0x33FFFFFF),
+                                    shape = CircleShape
+                                )
+                                .clickable { onSelectAccentColor(colorLong) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isColorSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DynamicIslandSettingsCard(
+    enabled: Boolean,
+    onToggleEnabled: (Boolean) -> Unit
+) {
+    SettingsGroupCard(title = "AKILLI CAM KAPSÜL (DYNAMIC GLASS ISLAND)") {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            SettingsToggleRow(
+                title = "Akıllı Cam Kapsülü Etkinleştir",
+                subtitle = "Şarj bağlantısı, ses seviyesi ve tema değişimlerinde üst çentik bölgesinde yay fiziğiyle genişleyen canlı interaktif ada",
+                checked = enabled,
+                onCheckedChange = onToggleEnabled
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThemesSubPage(
+    customization: LauncherCustomizationSettings,
+    onUpdateCustomization: ((LauncherCustomizationSettings) -> LauncherCustomizationSettings) -> Unit,
+    onBack: () -> Unit
+) {
+    val colors = HnmTheme.colors
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item { SubPageHeader(title = "Temalar ve Renk Paleti", onBack = onBack) }
+
+        // Canlı Cam Tema Önizleme Kartı
+        item {
+            LiveThemeGlassPreviewCard(
+                accentTheme = customization.accentTheme,
+                themeMode = customization.themeMode,
+                iconTintStyle = customization.iconTintStyle
+            )
+        }
+
+        // Tasarım Renk Paletleri (7 Seçkin HNM Teması)
+        item {
+            SettingsGroupCard(title = "TASARIM RENK TEMALARI") {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Sistem geneli vurgu renklerini, denetim merkezi sürgülerini, cam kapsülü ve ikon tonlarını anında dönüştürür",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.textMuted
+                    )
+
+                    HnmAccentTheme.entries.forEachIndexed { index, theme ->
+                        val isSelected = customization.accentTheme == theme
+                        ThemeChoiceRow(
+                            theme = theme,
+                            selected = isSelected,
+                            onClick = {
+                                onUpdateCustomization {
+                                    it.copy(
+                                        accentTheme = theme,
+                                        iconAccentColorRgb = theme.primaryColorArgb
+                                    )
+                                }
+                            }
+                        )
+                        if (index < HnmAccentTheme.entries.lastIndex) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 52.dp),
+                                thickness = 0.5.dp,
+                                color = colors.divider
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sistem Görünüm Modu (Otomatik / Açık / Koyu)
+        item {
+            AppearanceModeSelectorCard(
+                selectedMode = customization.themeMode,
+                onSelectMode = { mode ->
+                    onUpdateCustomization { it.copy(themeMode = mode) }
+                }
+            )
+        }
+
+        // Buzlu Cam İkon Temalama
+        item {
+            IconTintStyleSelectorCard(
+                selectedStyle = customization.iconTintStyle,
+                selectedAccentColor = customization.iconAccentColorRgb,
+                onSelectStyle = { style ->
+                    onUpdateCustomization { it.copy(iconTintStyle = style) }
+                },
+                onSelectAccentColor = { colorRgb ->
+                    onUpdateCustomization { it.copy(iconAccentColorRgb = colorRgb) }
+                }
+            )
+        }
+
+        // Cam Dokusu ve Şeffaflık Yoğunluğu
+        item {
+            SettingsGroupCard(title = "CAM DOKUSU VE ŞEFFAFLIK") {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    HnmSteppedCustomizationSlider(
+                        title = "Buzlu Cam Şeffaflığı",
+                        committedPercent = customization.glassOpacityPercent,
+                        valueRange = 50f..100f,
+                        onCommitPercent = { next ->
+                            onUpdateCustomization { it.copy(glassOpacityPercent = next) }
+                        }
+                    )
+                    Text(
+                        text = "Altındaki duvar kağıdıyla etkileşime giren bulanıklık ve yansıma derinliğini ayarlar",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.textMuted
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeChoiceRow(
+    theme: HnmAccentTheme,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val colors = HnmTheme.colors
+    val primColor = Color(theme.primaryColorArgb)
+    val secColor = Color(theme.secondaryColorArgb)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                if (selected) primColor.copy(alpha = if (colors.isDark) 0.18f else 0.10f) else Color.Transparent
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Canlı çift renkli gradyan küre
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(Brush.linearGradient(listOf(primColor, secColor)))
+                .border(
+                    width = if (selected) 2.5.dp else 1.dp,
+                    color = if (selected) Color.White else Color(0x33FFFFFF),
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = theme.titleTr,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (selected) primColor else colors.textPrimary
+                )
+                Text(
+                    text = "• ${theme.shortTitleTr}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.textMuted
+                )
+            }
+            Text(
+                text = theme.descriptionTr,
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.textMuted,
+                maxLines = 2
+            )
+        }
+
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(primColor.copy(alpha = 0.2f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "Aktif",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = primColor,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LiveThemeGlassPreviewCard(
+    accentTheme: HnmAccentTheme,
+    themeMode: HnmThemeMode,
+    iconTintStyle: IconTintStyle
+) {
+    val colors = HnmTheme.colors
+    val primColor = Color(accentTheme.primaryColorArgb)
+    val secColor = Color(accentTheme.secondaryColorArgb)
+
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(26.dp),
+        tone = GlassTone.ELEVATED_MODAL
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Canlı Cam Önizleme",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${accentTheme.titleTr} • ${themeMode.titleTr}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.textMuted
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Brush.horizontalGradient(listOf(primColor, secColor)))
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = accentTheme.shortTitleTr,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            // Minyatür UI simülasyonu (Akıllı Kapsül, İkonlar)
+            GlassSurface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp),
+                shape = RoundedCornerShape(18.dp),
+                tone = GlassTone.CARD
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Minyatür Akıllı Cam Kapsül
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (colors.isDark) Color(0xCC000000) else Color(0x99FFFFFF))
+                            .border(1.dp, primColor.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                            .padding(horizontal = 14.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(primColor)
+                            )
+                            Text(
+                                text = "HNM Cam Kapsül",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = colors.textPrimary,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+
+                    // Minyatür 4'lü Cam İkon Dizisi
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val previewIcons: List<Pair<ImageVector, String>> = listOf(
+                            Icons.Rounded.Palette to "Tema",
+                            Icons.Rounded.GridView to "Izgara",
+                            Icons.Rounded.FlashlightOn to "Fener",
+                            Icons.Rounded.Settings to "Ayar"
+                        )
+                        previewIcons.forEach { (icon, lbl) ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(SquircleShape.Icon)
+                                        .background(
+                                            Brush.verticalGradient(
+                                                listOf(
+                                                    primColor.copy(alpha = 0.85f),
+                                                    secColor.copy(alpha = 0.65f)
+                                                )
+                                            )
+                                        )
+                                        .border(0.8.dp, Color.White.copy(alpha = 0.4f), SquircleShape.Icon),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Text(
+                                    text = lbl,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 9.sp,
+                                    color = colors.textMuted
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun CustomizationSubPage(
     customization: LauncherCustomizationSettings,
     isDefaultLauncher: Boolean,
@@ -789,6 +1285,28 @@ private fun CustomizationSubPage(
                 selectedMode = customization.themeMode,
                 onSelectMode = { mode ->
                     onUpdateCustomization { it.copy(themeMode = mode) }
+                }
+            )
+        }
+
+        item {
+            IconTintStyleSelectorCard(
+                selectedStyle = customization.iconTintStyle,
+                selectedAccentColor = customization.iconAccentColorRgb,
+                onSelectStyle = { style ->
+                    onUpdateCustomization { it.copy(iconTintStyle = style) }
+                },
+                onSelectAccentColor = { colorRgb ->
+                    onUpdateCustomization { it.copy(iconAccentColorRgb = colorRgb) }
+                }
+            )
+        }
+
+        item {
+            DynamicIslandSettingsCard(
+                enabled = customization.dynamicIslandEnabled,
+                onToggleEnabled = { enabled ->
+                    onUpdateCustomization { it.copy(dynamicIslandEnabled = enabled) }
                 }
             )
         }
@@ -1014,6 +1532,24 @@ private fun CustomizationSubPage(
                             }
                         }
                     }
+                }
+            }
+        }
+
+        item {
+            SettingsGroupCard(title = "TABLET VE EKRAN DÖNDÜRME (YATAY MOD)") {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    SettingsToggleRow(
+                        title = "Otomatik Ekran Döndürme & Yatay Mod",
+                        subtitle = "Cihazı çevirdiğinizde ana ekran, dock ve Bugün paneli otomatik olarak yatay tablet moduna geçer",
+                        checked = customization.allowScreenRotation,
+                        onCheckedChange = { allowed ->
+                            onUpdateCustomization { it.copy(allowScreenRotation = allowed) }
+                        }
+                    )
                 }
             }
         }

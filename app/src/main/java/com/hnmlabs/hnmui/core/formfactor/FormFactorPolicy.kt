@@ -11,7 +11,7 @@ import kotlin.math.roundToInt
  */
 @Immutable
 data class LauncherFeatureFlags(
-    val enableTabletLayout: Boolean = false
+    val enableTabletLayout: Boolean = true
 )
 
 enum class DeviceProfile {
@@ -52,31 +52,89 @@ object FormFactorPolicy {
     fun resolve(
         smallestScreenWidthDp: Int,
         flags: LauncherFeatureFlags = LauncherFeatureFlags(),
-        customization: LauncherCustomizationSettings = LauncherCustomizationSettings()
+        customization: LauncherCustomizationSettings = LauncherCustomizationSettings(),
+        isLandscape: Boolean = false,
+        screenWidthDp: Int = smallestScreenWidthDp,
+        screenHeightDp: Int = smallestScreenWidthDp
     ): LauncherGridSpec {
         val safeSwDp = smallestScreenWidthDp.coerceAtLeast(320)
         val isTabletHardware = safeSwDp >= TABLET_SW_THRESHOLD_DP
         val glassFactor = (customization.glassOpacityPercent.coerceIn(70, 135)) / 100f
 
         if (isTabletHardware && flags.enableTabletLayout) {
-            // Rezerve edilen Tablet / Katlanabilir İç Ekran ızgara profili
+            if (isLandscape) {
+                // Tablet Yatay (Landscape) Modu
+                val cols = customization.tabletLandscapeColumns.coerceIn(6, 8)
+                val rows = customization.tabletLandscapeRows.coerceIn(4, 6)
+                val dockCount = 6.coerceAtLeast(customization.dockMaxItems).coerceIn(6, 8)
+                val horizPad = 48.coerceAtLeast((screenWidthDp * 0.05f).roundToInt())
+
+                return LauncherGridSpec(
+                    profile = DeviceProfile.TABLET_RESERVED,
+                    isTabletHardwareDetected = true,
+                    columns = cols,
+                    rows = rows,
+                    dockVisible = customization.dockVisible,
+                    dockMaxItems = dockCount,
+                    iconSizeDp = 68,
+                    dockIconSizeDp = 64,
+                    dockScaleFactor = 1.05f,
+                    showHomeLabels = customization.showHomeLabels,
+                    horizontalPaddingDp = horizPad,
+                    folderPreviewColumns = 3,
+                    folderExpandedColumns = 4,
+                    glassOpacityFactor = glassFactor,
+                    todayDualColumn = true,
+                    dockShowRecentsDivider = true
+                )
+            } else {
+                // Tablet Dikey (Portrait) Modu
+                val cols = 6
+                val rows = 5
+                val dockCount = 6.coerceAtLeast(customization.dockMaxItems).coerceIn(6, 8)
+                return LauncherGridSpec(
+                    profile = DeviceProfile.TABLET_RESERVED,
+                    isTabletHardwareDetected = true,
+                    columns = cols,
+                    rows = rows,
+                    dockVisible = customization.dockVisible,
+                    dockMaxItems = dockCount,
+                    iconSizeDp = 64,
+                    dockIconSizeDp = 62,
+                    dockScaleFactor = 1f,
+                    showHomeLabels = customization.showHomeLabels,
+                    horizontalPaddingDp = 36,
+                    folderPreviewColumns = 3,
+                    folderExpandedColumns = 4,
+                    glassOpacityFactor = glassFactor,
+                    todayDualColumn = true,
+                    dockShowRecentsDivider = true
+                )
+            }
+        }
+
+        if (isLandscape) {
+            // Telefon Yatay (Landscape) Modu
+            val cols = 6
+            val rows = 3
+            val dockCount = customization.dockMaxItems.coerceIn(3, 6)
             return LauncherGridSpec(
-                profile = DeviceProfile.TABLET_RESERVED,
-                isTabletHardwareDetected = true,
-                columns = 6,
-                rows = 5,
+                profile = DeviceProfile.PHONE_ACTIVE,
+                isTabletHardwareDetected = isTabletHardware,
+                columns = cols,
+                rows = rows,
                 dockVisible = customization.dockVisible,
-                dockMaxItems = 6,
-                iconSizeDp = 64,
-                dockIconSizeDp = 62,
-                dockScaleFactor = 1f,
+                dockMaxItems = dockCount,
+                iconSizeDp = 48,
+                dockIconSizeDp = 50,
+                dockScaleFactor = 0.9f,
                 showHomeLabels = customization.showHomeLabels,
-                horizontalPaddingDp = 36,
+                horizontalPaddingDp = 44,
                 folderPreviewColumns = 3,
                 folderExpandedColumns = 4,
                 glassOpacityFactor = glassFactor,
                 todayDualColumn = true,
-                dockShowRecentsDivider = true
+                dockShowRecentsDivider = false
             )
         }
 
@@ -135,10 +193,13 @@ object FormFactorPolicy {
     }
 
     /**
-     * Telefon profilinde dikey yönelimi korur; tablet rezervi etkinleştirildiğinde serbest bırakır.
+     * Telefon ve tabletlerde serbest ekran döndürme ve yönelim politikasını belirler.
      */
-    fun preferredScreenOrientation(flags: LauncherFeatureFlags = LauncherFeatureFlags()): Int {
-        return if (flags.enableTabletLayout) {
+    fun preferredScreenOrientation(
+        flags: LauncherFeatureFlags = LauncherFeatureFlags(),
+        customization: LauncherCustomizationSettings = LauncherCustomizationSettings()
+    ): Int {
+        return if (flags.enableTabletLayout || customization.allowScreenRotation) {
             ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         } else {
             ActivityInfo.SCREEN_ORIENTATION_PORTRAIT

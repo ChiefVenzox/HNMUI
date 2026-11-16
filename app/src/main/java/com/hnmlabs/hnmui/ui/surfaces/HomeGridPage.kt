@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -53,6 +55,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.hnmlabs.hnmui.core.formfactor.LauncherGridSpec
@@ -571,9 +574,20 @@ fun LauncherBottomDockBar(
                 null
             }
 
+            val isWideScreen = gridSpec.isTabletHardwareDetected || gridSpec.columns >= 6
+            val dockMaxWidth = if (gridSpec.isTabletHardwareDetected) 680.dp else if (gridSpec.columns >= 6) 560.dp else Dp.Unspecified
+
             GlassSurface(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .then(
+                        if (dockMaxWidth != Dp.Unspecified) {
+                            Modifier
+                                .widthIn(max = dockMaxWidth)
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                        } else {
+                            Modifier.fillMaxWidth()
+                        }
+                    )
                     .then(
                         if (dockHoverScale != 1f) {
                             Modifier.graphicsLayer {
@@ -608,7 +622,13 @@ fun LauncherBottomDockBar(
                 if (visibleDockApps.isEmpty()) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .then(
+                                if (dockMaxWidth != Dp.Unspecified) {
+                                    Modifier.widthIn(min = 320.dp, max = dockMaxWidth)
+                                } else {
+                                    Modifier.fillMaxWidth()
+                                }
+                            )
                             .height(gridSpec.dockIconSizeDp.dp + innerVPad * 2),
                         contentAlignment = Alignment.Center
                     ) {
@@ -621,9 +641,19 @@ fun LauncherBottomDockBar(
                 } else {
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .then(
+                                if (dockMaxWidth != Dp.Unspecified) {
+                                    Modifier.wrapContentWidth(Alignment.CenterHorizontally)
+                                } else {
+                                    Modifier.fillMaxWidth()
+                                }
+                            )
                             .padding(horizontal = innerHPad, vertical = innerVPad),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        horizontalArrangement = if (dockMaxWidth != Dp.Unspecified) {
+                            Arrangement.spacedBy((18f * scale).dp, Alignment.CenterHorizontally)
+                        } else {
+                            Arrangement.SpaceEvenly
+                        },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         visibleDockApps.forEachIndexed { idx, app ->
