@@ -110,10 +110,13 @@ fun HomeGridPage(
     val colors = HnmTheme.colors
     val haptics = LocalHapticFeedback.current
 
-    val bottomDockClearanceDp = if (gridSpec.dockVisible) {
-        (134 * gridSpec.dockScaleFactor).roundToInt().coerceIn(108, 168).dp
+    val isLandscape = gridSpec.columns > gridSpec.rows
+    val bottomDockClearanceDp = if (!gridSpec.dockVisible) {
+        32.dp
+    } else if (isLandscape) {
+        (88 * gridSpec.dockScaleFactor).roundToInt().coerceIn(72, 104).dp
     } else {
-        48.dp
+        (134 * gridSpec.dockScaleFactor).roundToInt().coerceIn(108, 168).dp
     }
 
     val isDragging = dragController.isDragging
@@ -458,10 +461,13 @@ fun LauncherBottomDockBar(
 ) {
     val colors = HnmTheme.colors
     val scale = gridSpec.dockScaleFactor.coerceIn(0.75f, 1.25f)
+    val isLandscape = gridSpec.columns > gridSpec.rows
     val outerHPad = (16f / scale).roundToInt().coerceIn(8, 22).dp
     val innerHPad = (16f * scale).roundToInt().coerceIn(10, 22).dp
-    val innerVPad = (11f * scale).roundToInt().coerceIn(7, 16).dp
+    val innerVPad = if (isLandscape) 6.dp else (11f * scale).roundToInt().coerceIn(7, 16).dp
     val dockCornerRadius = (30f * scale).roundToInt().coerceIn(22, 38).dp
+    val barVerticalPadding = if (isLandscape) 4.dp else 8.dp
+    val barSpacedBy = if (isLandscape) 4.dp else 10.dp
 
     val isDragging = dragController.isDragging
     val isDockDropHovered = isDragging && dragController.hoveredTarget is HoverDropTarget.DockCell
@@ -501,9 +507,9 @@ fun LauncherBottomDockBar(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = outerHPad, vertical = 8.dp),
+            .padding(horizontal = outerHPad, vertical = barVerticalPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(barSpacedBy)
     ) {
         // iOS tarzı "Ara" (Spotlight) hapı ve akıcı animasyonlu sayfa kapsülleri
         Row(
@@ -719,15 +725,6 @@ fun LauncherBottomDockBar(
                                     )
                                 )
                             }
-                        }
-
-                        if (gridSpec.dockShowRecentsDivider) {
-                            Spacer(
-                                modifier = Modifier
-                                    .width(1.dp)
-                                    .height(42.dp)
-                                    .background(HnmPalette.SubtleBorder)
-                            )
                         }
                     }
                 }

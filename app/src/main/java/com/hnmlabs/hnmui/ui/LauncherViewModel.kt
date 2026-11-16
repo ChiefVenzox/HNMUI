@@ -170,28 +170,21 @@ class LauncherViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             combine(
                 appsRepository.apps,
-                layoutRepository.persistedState,
-                screenConfigFlow
-            ) { apps, persisted, screenConfig ->
-                Triple(apps, persisted, screenConfig)
+                layoutRepository.persistedState
+            ) { apps, persisted ->
+                Pair(apps, persisted)
             }
                 .distinctUntilChanged()
-                .collect { (apps, persisted, screenConfig) ->
+                .collect { (apps, persisted) ->
                     if (apps.isNotEmpty()) {
                         syncMutex.withLock {
                             val activeCustom = persisted?.customization ?: defaultCustomization
-                            val spec = FormFactorPolicy.resolve(
-                                smallestScreenWidthDp = screenConfig.smallestScreenWidthDp,
-                                flags = featureFlags,
-                                customization = activeCustom,
-                                isLandscape = screenConfig.isLandscape,
-                                screenWidthDp = screenConfig.screenWidthDp,
-                                screenHeightDp = screenConfig.screenHeightDp
-                            )
+                            val canonicalCapacity = (activeCustom.gridColumns * activeCustom.gridRows).coerceAtLeast(16)
+                            val canonicalDockMax = activeCustom.dockMaxItems.coerceIn(3, 8)
                             layoutRepository.syncWithInstalledApps(
                                 installedApps = apps,
-                                maxPerPage = spec.maxItemsPerPage,
-                                dockMaxItems = spec.dockMaxItems
+                                maxPerPage = canonicalCapacity,
+                                dockMaxItems = canonicalDockMax
                             )
                         }
                     }
@@ -228,7 +221,8 @@ class LauncherViewModel(
         for (app in badgedApps) {
             appById[app.key.stableId] = app
         }
-        val safeMaxPerPage = gridSpec.maxItemsPerPage.coerceAtLeast(8)
+        val canonicalCapacity = (activeCustomization.gridColumns * activeCustomization.gridRows).coerceAtLeast(16)
+        val safeMaxPerPage = canonicalCapacity
 
         val rawEffectivePersisted = persisted ?: HomeLayoutRepository.buildInitialSeedState(
             installedApps = badgedApps,

@@ -56,7 +56,7 @@ Grab the Play Protect-compliant, release-signed APK directly:
 ```text
 app/src/main/java/com/hnmlabs/hnmui/
 ├── core/
-│   ├── formfactor/     # Responsive 4x4..7x7 Phone grid, Dock scaling + Tablet 6x5 reserve
+│   ├── formfactor/     # Responsive 4x4..7x7 grid, Transposed landscape/portrait slot conservation, Dock scaling
 │   └── system/         # HighRefreshRateHelper (120Hz), DeviceSystemController & DefaultLauncherHelper
 ├── data/               # InstalledAppsRepository (LRU + GPU icon cache), HomeLayoutRepository (DataStore),
 │                       # AppCategoryClassifier

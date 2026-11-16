@@ -85,12 +85,13 @@ object FormFactorPolicy {
                     folderExpandedColumns = 4,
                     glassOpacityFactor = glassFactor,
                     todayDualColumn = true,
-                    dockShowRecentsDivider = true
+                    dockShowRecentsDivider = false
                 )
             } else {
-                // Tablet Dikey (Portrait) Modu
-                val cols = 6
-                val rows = 5
+                // Tablet Dikey (Portrait) Modu - Yatay ızgara boyutlarını dikey forma transpoze ederek
+                // toplam slot kapasitesini (cols * rows == rows * cols) korur.
+                val cols = customization.tabletLandscapeRows.coerceIn(4, 6)
+                val rows = customization.tabletLandscapeColumns.coerceIn(6, 8)
                 val dockCount = 6.coerceAtLeast(customization.dockMaxItems).coerceIn(6, 8)
                 return LauncherGridSpec(
                     profile = DeviceProfile.TABLET_RESERVED,
@@ -108,15 +109,17 @@ object FormFactorPolicy {
                     folderExpandedColumns = 4,
                     glassOpacityFactor = glassFactor,
                     todayDualColumn = true,
-                    dockShowRecentsDivider = true
+                    dockShowRecentsDivider = false
                 )
             }
         }
 
         if (isLandscape) {
             // Telefon Yatay (Landscape) Modu
-            val cols = 6
-            val rows = 3
+            // Dikey ızgara sütun ve satırlarını yatay yönelime transpoze et:
+            // cols = gridRows, rows = gridColumns => slot sayısı tam olarak eşit kalır.
+            val cols = customization.gridRows.coerceIn(4, 7)
+            val rows = customization.gridColumns.coerceIn(3, 7)
             val dockCount = customization.dockMaxItems.coerceIn(3, 6)
             return LauncherGridSpec(
                 profile = DeviceProfile.PHONE_ACTIVE,

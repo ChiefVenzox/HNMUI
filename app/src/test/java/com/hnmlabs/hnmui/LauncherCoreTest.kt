@@ -43,18 +43,19 @@ class LauncherCoreTest {
     }
 
     @Test
-    fun `tablet screen activates 6x5 grid when tablet reserve flag is enabled`() {
+    fun `tablet screen activates 4x6 portrait grid when tablet reserve flag is enabled`() {
         val spec = FormFactorPolicy.resolve(
             smallestScreenWidthDp = 768,
             flags = LauncherFeatureFlags(enableTabletLayout = true)
         )
         assertEquals(DeviceProfile.TABLET_RESERVED, spec.profile)
         assertTrue(spec.isTabletHardwareDetected)
-        assertEquals(6, spec.columns)
-        assertEquals(5, spec.rows)
+        assertEquals(4, spec.columns)
+        assertEquals(6, spec.rows)
+        assertEquals(24, spec.maxItemsPerPage)
         assertEquals(6, spec.dockMaxItems)
         assertTrue(spec.todayDualColumn)
-        assertTrue(spec.dockShowRecentsDivider)
+        assertFalse(spec.dockShowRecentsDivider)
     }
 
     @Test
@@ -70,9 +71,25 @@ class LauncherCoreTest {
         assertTrue(spec.isTabletHardwareDetected)
         assertEquals(6, spec.columns)
         assertEquals(4, spec.rows)
+        assertEquals(24, spec.maxItemsPerPage)
         assertEquals(6, spec.dockMaxItems)
         assertTrue(spec.todayDualColumn)
-        assertTrue(spec.dockShowRecentsDivider)
+        assertFalse(spec.dockShowRecentsDivider)
+    }
+
+    @Test
+    fun `phone screen in landscape transposes grid maintaining identical capacity`() {
+        val spec = FormFactorPolicy.resolve(
+            smallestScreenWidthDp = 392,
+            flags = LauncherFeatureFlags(enableTabletLayout = false),
+            isLandscape = true
+        )
+        assertEquals(DeviceProfile.PHONE_ACTIVE, spec.profile)
+        assertFalse(spec.isTabletHardwareDetected)
+        assertEquals(6, spec.columns)
+        assertEquals(4, spec.rows)
+        assertEquals(24, spec.maxItemsPerPage)
+        assertFalse(spec.dockShowRecentsDivider)
     }
 
     @Test
