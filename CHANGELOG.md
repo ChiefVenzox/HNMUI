@@ -5,7 +5,27 @@ All notable changes to **HNMUI** are documented in this file.
 
 ---
 
-## [Unreleased] (Tablet Support, Horizontal/Landscape Adaptation & Design Innovations)
+## [0.3.5.1] — 2026-11-16 (Luxury Frosted Glass Folder Redesign, Paged Grid & Flawless UI Suite)
+
+### 📂 Flawless iOS / VisionOS Folder System Redesign / Kusursuz Buzlu Cam Klasör Sistemi
+- **EN:** Completely redesigned the folder experience from the ground up to eliminate amateurish effects:
+  - **Paged Glass Container (`HorizontalPager`):** Folders now feature true paginated 3×3 / 4×4 page layouts with iOS spring physics (`HnmMotion.folderSpring`), replacing generic scroll boxes with spatial folder cards bounded at ergonomic widths (`324dp`–`440dp`).
+  - **Animated Page Indicators:** Fluid capsule indicators below the folder grid where active dots expand to 16dp with spring interpolation.
+  - **Interactive Frosted Glass Title Pill:** Centered translucent title capsule with inline tap-to-rename, pencil icon, keyboard Done action, and tactile haptic feedback.
+  - **Double-Layered Specular Rim & Ambient Depth Shadow:** 28dp squircle card with top specular light reflection and soft ambient occlusion shadows (`ambientColor = 0x66000000`).
+  - **Interactive Gestures:** Downward drag-to-dismiss gesture and subtle quick close button in addition to tapping the backdrop scrim.
+  - **Pulsing Drop-Target Aura on Home Tiles:** `FolderIconTile` features an animated breathing cyan glow border when an app is dragged over it, with centered symmetrical mini icon alignment and a specular glass lens reflection.
+- **TR:** Acemice efektlerden arındırılmış, üst düzey iOS / VisionOS standartlarında lüks buzlu cam klasör deneyimi sıfırdan inşa edildi:
+  - **Sayfalandırılmış Cam Klasör Kartı (`HorizontalPager`):** Klasörler artık dikey kutu kaydırması yerine gerçek iOS yay fiziğine sahip 3×3 / 4×4 yatay sayfalara bölündü; ergonomik süper-elips kart boyutları (`324dp`–`440dp`) belirlendi.
+  - **Animasyonlu Sayfa Noktaları:** Izgaranın altında aktif sayfanın 16dp'ye genişlediği yay animasyonlu sayfa gösterge kapsülleri eklendi.
+  - **İnteraktif Cam Başlık Kapsülü:** Doğrudan üzerine dokunarak düzenlenebilen, kurşun kalem ikonlu, klavye Bitti eylemli ve haptik titreşimli şık cam başlık kapsülü geliştirildi.
+  - **Prizmatik Çift Katmanlı Cam ve Derinlik Gölgesi:** Üstten specular ışık yansıması ve `28dp` ambient derinlik gölgesine sahip süper-elips kart formu uygulandı.
+  - **Aşağı Kaydırarak Kapatma Jesti:** Arka plana dokunmanın yanı sıra klasör kartını aşağı sürükleyerek kapatma jesti ve hızlı kapat butonu eklendi.
+  - **Canlı Nabız Vurgulu Klasör İkonu:** Ana ekrandaki `FolderIconTile`, üzerine uygulama sürüklendiğinde nefes alan neon ışıma aurası, tam simetrik ortalanmış mini ikon dizilimi ve cam lens yansıması kazandı.
+
+### 🔍 Spotlight, Quick Action Menu & App Library Visual Polish / Görsel İyileştirmeler
+- **EN:** Unified semantic dynamic theme tokens (`colors.accentCyan`, `colors.textSecondary`, `colors.textMuted`, `colors.badgeRed`) across Spotlight search results and App Library category pods to ensure 100% WCAG contrast across all custom glass color palettes. Enclosed App Library overflow clusters in miniature frosted glass pods with 3D elevation.
+- **TR:** Spotlight arama sonuçları ve Uygulama Arşivi kategori kartlarında temaya duyarlı dinamik renk jetonları (`colors.accentCyan`, `colors.textMuted`, vb.) standartlaştırılarak her renk paletinde kusursuz kontrast sağlandı. Uygulama Arşivi'ndeki sağ alt mini uygulama kümesi, 3D derinlikli cam kapsülle taçlandırıldı.
 
 ### 📱 Tablet & Landscape Mode Adaptation & Layout Stability / Tablet & Yatay Mod Uyarlaması & Düzen Kararlılığı
 - **EN:** Activated full tablet and horizontal screen support (`enableTabletLayout = true`, `allowScreenRotation = true`). Enabled fluid orientation changes (`SCREEN_ORIENTATION_UNSPECIFIED`) with zero cold restarts (`android:configChanges` orientation handling). Implemented iPadOS-style floating centered glass Dock (`LauncherBottomDockBar`) with `widthIn(max = 680.dp)`, responsive 6x4 landscape / 4x6 portrait tablet grids, slot-conserving transposition (`cols * rows == rows * cols`), orientation-aware compact dock clearance (`88.dp` in landscape vs `134.dp` in portrait), and severed screen orientation mutations from DataStore persistence to eliminate page splitting and icon shifting on rotation. Removed dangling dock divider line. Added a 2-column Today View dashboard (`todayDualColumn = true`), responsive 3–4 category columns in App Library (`AppLibraryPage`), and ergonomic centered or TopEnd floating sheet cards for Control Center, Notification Center, Spotlight, and HNM Settings. Added an "Otomatik Ekran Döndürme & Yatay Mod" toggle in HNM Settings.

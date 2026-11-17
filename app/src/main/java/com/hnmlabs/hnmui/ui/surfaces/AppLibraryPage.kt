@@ -194,12 +194,13 @@ fun AppLibraryPage(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = app.label,
-                                    style = MaterialTheme.typography.titleMedium
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = colors.textPrimary
                                 )
                                 Text(
                                     text = app.category.titleTr,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = HnmPalette.TextMuted
+                                    color = colors.textMuted
                                 )
                             }
                         }
@@ -275,27 +276,37 @@ private fun AppLibraryCategoryPod(
                             if (idx == 3 && hasOverflowCluster) {
                                 // Sağ alt 2x2 mini küme: Dokununca tüm kategoriyi büyütür
                                 val overflowApps = group.apps.drop(3).take(4)
-                                Column(
+                                GlassSurface(
                                     modifier = Modifier
-                                        .size(58.dp)
-                                        .clickable(onClick = onExpandCategory)
-                                        .padding(2.dp),
-                                    verticalArrangement = Arrangement.SpaceBetween,
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                        .size(54.dp)
+                                        .clickable(onClick = onExpandCategory),
+                                    shape = SquircleShape.Icon,
+                                    tone = GlassTone.PILL
                                 ) {
-                                    for (mRow in 0..1) {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            for (mCol in 0..1) {
-                                                val miniApp = overflowApps.getOrNull(mRow * 2 + mCol)
-                                                if (miniApp != null) {
-                                                    MiniAppIconPreview(
-                                                        app = miniApp,
-                                                        size = 24.dp,
-                                                        cachedIconProvider = cachedIconProvider,
-                                                        loadIconSuspend = loadIconSuspend
-                                                    )
-                                                } else {
-                                                    Spacer(modifier = Modifier.size(24.dp))
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(4.dp),
+                                        verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        for (mRow in 0..1) {
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                for (mCol in 0..1) {
+                                                    val miniApp = overflowApps.getOrNull(mRow * 2 + mCol)
+                                                    if (miniApp != null) {
+                                                        MiniAppIconPreview(
+                                                            app = miniApp,
+                                                            size = 20.dp,
+                                                            cachedIconProvider = cachedIconProvider,
+                                                            loadIconSuspend = loadIconSuspend
+                                                        )
+                                                    } else {
+                                                        Spacer(modifier = Modifier.size(20.dp))
+                                                    }
                                                 }
                                             }
                                         }

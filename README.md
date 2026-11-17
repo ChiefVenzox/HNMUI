@@ -5,22 +5,22 @@
 **iOS Simplicity Meets Android Freedom — Frosted-Glass 120 FPS Home Launcher**  
 **iOS Sadeliği, Android Özgürlüğüyle Buluştu — Buzlu Cam Dokulu 120 FPS Ana Ekran**
 
-[![Latest Release](https://img.shields.io/badge/release-v0.3.5--alpha-0A84FF?style=for-the-badge)](releases/HNMUI-latest.apk)
+[![Latest Release](https://img.shields.io/badge/release-v0.3.5.1-0A84FF?style=for-the-badge)](releases/HNMUI-latest.apk)
 [![CI & Secret Audit](https://img.shields.io/github/actions/workflow/status/ChiefVenzox/HNMUI/android-ci.yml?branch=main&style=for-the-badge&label=CI%20%26%20Security)](https://github.com/ChiefVenzox/HNMUI/actions)
 [![Android](https://img.shields.io/badge/Android-9.0%2B%20(API%2028--35)-30D158?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
 [![Offline First](https://img.shields.io/badge/Privacy-Zero%20Internet-10B981?style=for-the-badge)](SECURITY.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](LICENSE)
 
-[**🇬🇧 English**](#english) · [**🇹🇷 Türkçe**](#türkçe) · [**📄 `README.tr.md`**](README.tr.md) · [**📚 Wiki**](docs/wiki/Home.md) · [**🔒 Security**](SECURITY.md) · [**📋 Changelog**](CHANGELOG.md) · [**🤝 Contributing**](CONTRIBUTING.md) · [**⬇️ Doğrudan APK İndir (`v0.3.5`)**](releases/HNMUI-latest.apk)
+[**🇬🇧 English**](#english) · [**🇹🇷 Türkçe**](#türkçe) · [**📄 `README.tr.md`**](README.tr.md) · [**📚 Wiki**](docs/wiki/Home.md) · [**🔒 Security**](SECURITY.md) · [**📋 Changelog**](CHANGELOG.md) · [**🤝 Contributing**](CONTRIBUTING.md) · [**⬇️ Doğrudan APK İndir (`v0.3.5.1`)**](releases/HNMUI-latest.apk)
 
 </div>
 
 ---
 
 > [!TIP]
-> ### 📦 Doğrudan APK İndir / Direct APK Download
-> - **🚀 En Güncel Sürüm (Tablet, Yatay Mod & Cam Temaları):** [**`releases/HNMUI-latest.apk`**](releases/HNMUI-latest.apk) *(3.0 MB, Play Protect Uyumlu)*
-> - **🌐 GitHub Raw Doğrudan İndirme:** [**HNMUI-latest.apk İndir**](https://github.com/ChiefVenzox/HNMUI/raw/main/releases/HNMUI-latest.apk) veya [**HNMUI-v0.3.5-tablet.apk**](https://github.com/ChiefVenzox/HNMUI/raw/main/releases/HNMUI-v0.3.5-tablet.apk)
+> ### 📦 Doğrudan APK İndir / Direct APK Download (v0.3.5.1)
+> - **🚀 En Güncel Sürüm (Lüks Cam Klasör Sistemi & Yatay/Tablet Mod):** [**`releases/HNMUI-latest.apk`**](releases/HNMUI-latest.apk) *(3.0 MB, Play Protect Uyumlu)*
+> - **🌐 GitHub Raw Doğrudan İndirme:** [**HNMUI-latest.apk İndir**](https://github.com/ChiefVenzox/HNMUI/raw/main/releases/HNMUI-latest.apk) veya [**HNMUI-v0.3.5.1.apk**](https://github.com/ChiefVenzox/HNMUI/raw/main/releases/HNMUI-v0.3.5.1.apk)
 > - **📁 Depo İçi Konum:** [`releases/HNMUI-latest.apk`](releases/HNMUI-latest.apk)
 
 ---

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.AddToHomeScreen
 import androidx.compose.material.icons.rounded.Bolt
@@ -161,7 +162,14 @@ fun QuickActionMenuOverlay(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 GlassSurface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(
+                            elevation = 24.dp,
+                            shape = RoundedCornerShape(24.dp),
+                            ambientColor = Color(0x66000000),
+                            spotColor = Color(0x88000000)
+                        ),
                     shape = RoundedCornerShape(24.dp),
                     tone = GlassTone.ELEVATED_MODAL
                 ) {
@@ -285,7 +293,7 @@ fun QuickActionMenuOverlay(
                             ContextActionRow(
                                 label = "Uygulamayı Kaldır",
                                 icon = Icons.Rounded.DeleteOutline,
-                                tint = HnmPalette.BadgeRed,
+                                tint = colors.badgeRed,
                                 onClick = {
                                     onDismiss()
                                     onUninstallApp(app)

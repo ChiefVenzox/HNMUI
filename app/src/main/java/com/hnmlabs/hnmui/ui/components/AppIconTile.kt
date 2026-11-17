@@ -1,7 +1,13 @@
 package com.hnmlabs.hnmui.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -472,12 +478,23 @@ fun FolderIconTile(
 
     val gridN = previewColumns.coerceIn(2, 3)
 
+    val pulseTransition = rememberInfiniteTransition(label = "folderDropHighlightPulse")
+    val pulseGlow by pulseTransition.animateFloat(
+        initialValue = 0.40f,
+        targetValue = 0.95f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "folderPulseGlow"
+    )
+
     val folderLayerAndClickMod = if (enableInternalClickHandling) {
         val interactionSource = remember { MutableInteractionSource() }
         val isPressed by interactionSource.collectIsPressedAsState()
         val scaleState = animateFloatAsState(
             targetValue = when {
-                isDropTargetHighlighted -> 1.11f
+                isDropTargetHighlighted -> 1.12f
                 isPressed -> 0.91f
                 else -> 1f
             },
@@ -507,7 +524,7 @@ fun FolderIconTile(
     } else {
         val highlightScaleState = if (isDropTargetHighlighted) {
             animateFloatAsState(
-                targetValue = 1.11f,
+                targetValue = 1.12f,
                 animationSpec = HnmMotion.iconPressSpring(),
                 label = "folderDropHighlightScale"
             )
@@ -535,45 +552,74 @@ fun FolderIconTile(
             contentAlignment = Alignment.Center
         ) {
             GlassSurface(
-                modifier = Modifier.size(iconSize),
+                modifier = Modifier
+                    .size(iconSize)
+                    .then(
+                        if (isDropTargetHighlighted) {
+                            Modifier.border(
+                                width = 1.5.dp,
+                                color = colors.accentCyan.copy(alpha = pulseGlow),
+                                shape = SquircleShape.Icon
+                            )
+                        } else {
+                            Modifier
+                        }
+                    ),
                 shape = SquircleShape.Icon,
                 tone = if (isDropTargetHighlighted) GlassTone.PILL else GlassTone.DOCK
             ) {
                 val maxPreviewCount = gridN * gridN
                 val previewApps = folder.apps.take(maxPreviewCount)
-                val innerPad = if (gridN >= 3 || iconSize <= 42.dp) 4.dp else 6.dp
-                val cellGap = if (gridN >= 3 || iconSize <= 42.dp) 2.dp else 4.dp
+                val innerPad = if (gridN >= 3 || iconSize <= 42.dp) 5.dp else 7.dp
+                val cellGap = if (gridN >= 3 || iconSize <= 42.dp) 3.dp else 4.dp
                 val miniSize = ((iconSize - innerPad * 2 - cellGap * (gridN - 1)) / gridN)
                     .coerceAtLeast(8.dp)
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPad),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    for (rowIdx in 0 until gridN) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(cellGap),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            for (colIdx in 0 until gridN) {
-                                val index = rowIdx * gridN + colIdx
-                                val item = previewApps.getOrNull(index)
-                                if (item != null) {
-                                    MiniAppIconPreview(
-                                        app = item,
-                                        size = miniSize,
-                                        cachedIconProvider = cachedIconProvider,
-                                        loadIconSuspend = loadIconSuspend
-                                    )
-                                } else {
-                                    Spacer(modifier = Modifier.size(miniSize))
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPad),
+                        verticalArrangement = Arrangement.spacedBy(cellGap, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        for (rowIdx in 0 until gridN) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(cellGap, Alignment.CenterHorizontally),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                for (colIdx in 0 until gridN) {
+                                    val index = rowIdx * gridN + colIdx
+                                    val item = previewApps.getOrNull(index)
+                                    if (item != null) {
+                                        MiniAppIconPreview(
+                                            app = item,
+                                            size = miniSize,
+                                            cachedIconProvider = cachedIconProvider,
+                                            loadIconSuspend = loadIconSuspend
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.size(miniSize))
+                                    }
                                 }
                             }
                         }
                     }
+
+                    // Prizmatik cam üst ışık yansıması
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(SquircleShape.Icon)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = if (colors.isDark) 0.08f else 0.16f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
                 }
             }
 
@@ -611,7 +657,8 @@ fun MiniAppIconPreview(
     app: AppItem,
     size: Dp,
     cachedIconProvider: (AppComponentKey) -> ImageBitmap?,
-    loadIconSuspend: suspend (AppComponentKey) -> ImageBitmap?
+    loadIconSuspend: suspend (AppComponentKey) -> ImageBitmap?,
+    modifier: Modifier = Modifier
 ) {
     var bmp by remember(app.key.stableId) { mutableStateOf(cachedIconProvider(app.key)) }
     if (bmp == null) {
@@ -622,7 +669,8 @@ fun MiniAppIconPreview(
     AppSquircleArtwork(
         label = app.label,
         bitmap = bmp,
-        size = size
+        size = size,
+        modifier = modifier
     )
 }
 

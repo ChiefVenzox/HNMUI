@@ -269,11 +269,12 @@ fun SpotlightOverlay(
                                     Icon(
                                         imageVector = Icons.Rounded.Settings,
                                         contentDescription = null,
-                                        tint = HnmPalette.AccentCyan
+                                        tint = colors.accentCyan
                                     )
                                     Text(
                                         text = "HNM Ayarlar & 7×7 Özelleştirme",
-                                        style = MaterialTheme.typography.titleMedium
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = colors.textPrimary
                                     )
                                 }
                             }
@@ -284,7 +285,7 @@ fun SpotlightOverlay(
                                 Text(
                                     text = "UYGULAMALAR (${matchedApps.size})",
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = HnmPalette.TextSecondary
+                                    color = colors.textSecondary
                                 )
                             }
 
@@ -318,12 +319,13 @@ fun SpotlightOverlay(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = app.label,
-                                                style = MaterialTheme.typography.titleMedium
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = colors.textPrimary
                                             )
                                             Text(
                                                 text = app.category.titleTr,
                                                 style = MaterialTheme.typography.bodyMedium,
-                                                color = HnmPalette.TextMuted
+                                                color = colors.textMuted
                                             )
                                         }
                                     }
@@ -349,12 +351,13 @@ fun SpotlightOverlay(
                                     Icon(
                                         imageVector = Icons.Rounded.Language,
                                         contentDescription = null,
-                                        tint = HnmPalette.AccentCyan,
+                                        tint = colors.accentCyan,
                                         modifier = Modifier.size(22.dp)
                                     )
                                     Text(
                                         text = "\"$query\" için Web'de Ara",
-                                        style = MaterialTheme.typography.titleMedium
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = colors.textPrimary
                                     )
                                 }
                             }
